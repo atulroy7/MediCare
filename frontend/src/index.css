@@ -1,0 +1,143 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ─── Light Mode: #E8F4F8 (Light Blue Background) & #2E86C1 (Primary Navy) ─── */
+    --color-bg: 232 244 248; /* #E8F4F8 - User requested Light Blue Canvas */
+    --color-bg-subtle: 220 237 243; /* #DCEDF3 */
+    --color-text: 15 23 42; /* #0f172a - Slate 900 */
+    --color-text-muted: 71 85 105; /* #475569 - Slate 600 */
+    
+    --color-primary: 46 134 193; /* #2E86C1 - User requested Primary Navy */
+    --color-primary-light: 93 173 226; /* #5DADE2 - Sky Navy */
+    --color-primary-dark: 27 79 114; /* #1B4F72 - Deep Navy */
+    
+    --color-secondary: 231 76 60; /* #E74C3C - Coral Red Accent */
+    
+    --color-surface: 255 255 255;
+    --color-border: 204 225 234; /* #CCE1EA */
+    
+    --glass-border: rgba(46, 134, 193, 0.2);
+    --glass-bg: rgba(255, 255, 255, 0.92);
+    --glass-shadow: 0 12px 32px -8px rgba(46, 134, 193, 0.12);
+
+    --lofi-gradient-1: #d4eaf2; /* Soft Ice Navy Tint */
+    --lofi-gradient-2: #e0f2fe; /* Light Cyan Blue */
+    --lofi-gradient-3: #e8f4f8;
+  }
+
+  .dark {
+    /* ─── Dark Mode: Pure Obsidian True Pitch Black (#000000 / #09090B) ─── */
+    --color-bg: 0 0 0; /* #000000 - True OLED Pitch Black */
+    --color-bg-subtle: 14 14 17; /* #0E0E11 - Deep Charcoal Black */
+    --color-text: 255 255 255; /* #FFFFFF - Pure Crisp White Text */
+    --color-text-muted: 161 161 170; /* #A1A1AA - Crisp Muted Text */
+    
+    --color-primary: 56 189 248; /* #38BDF8 - Electric Blue Glow */
+    --color-primary-light: 125 211 252; /* #7DD3FC */
+    --color-primary-dark: 2 132 199; /* #0284C7 */
+    
+    --color-secondary: 244 63 94; /* #F43F5E - Vivid Accent */
+    
+    --color-surface: 12 12 15; /* #0C0C0F - Sleek Dark Surface */
+    --color-border: 39 39 42; /* #27272A - Zinc Border */
+    
+    --glass-border: rgba(255, 255, 255, 0.12);
+    --glass-bg: rgba(12, 12, 15, 0.92);
+    --glass-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.98);
+
+    --lofi-gradient-1: #09090b; /* Pure Obsidian */
+    --lofi-gradient-2: #000000; /* Pure Black */
+    --lofi-gradient-3: #121215;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+  
+  body {
+    @apply bg-[rgb(var(--color-bg))] text-[rgb(var(--color-text))] font-sans antialiased transition-colors duration-300 selection:bg-primary/20 selection:text-primary;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif tracking-tight text-[rgb(var(--color-text))];
+  }
+
+  /* Custom Minimalist Navy Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-primary/30 rounded-full hover:bg-primary/50 transition-colors;
+  }
+}
+
+@layer components {
+  /* ─── Navy Minimalist UI Components ─── */
+  
+  .glass-card {
+    @apply bg-[var(--glass-bg)] backdrop-blur-2xl border border-[var(--glass-border)] shadow-[var(--glass-shadow)] rounded-3xl transition-all duration-300;
+  }
+
+  .glass-card-hover {
+    @apply hover:shadow-[0_20px_45px_-12px_rgba(46,134,193,0.2)] hover:-translate-y-1.5 dark:hover:shadow-[0_20px_45px_-12px_rgba(52,152,219,0.35)];
+  }
+
+  .glass-button {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full font-semibold text-xs uppercase tracking-wider transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:pointer-events-none;
+  }
+  
+  .glass-button-primary {
+    @apply glass-button bg-[rgb(var(--color-primary))] text-white hover:bg-[rgb(var(--color-primary-dark))] shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 hover:-translate-y-0.5;
+  }
+
+  .glass-button-secondary {
+    @apply glass-button bg-[rgb(var(--color-surface))] text-[rgb(var(--color-text))] border border-[rgb(var(--color-border))] hover:bg-[rgb(var(--color-bg-subtle))];
+  }
+
+  .page-shell {
+    @apply min-h-screen pt-20 pb-16;
+  }
+
+  .section-pad {
+    @apply py-16 md:py-24;
+  }
+  
+  .kicker {
+    @apply inline-flex items-center gap-2 text-xs font-extrabold tracking-widest uppercase text-[rgb(var(--color-primary))] bg-primary/10 px-3 py-1 rounded-full border border-primary/20 mb-3;
+  }
+
+  .display-heading {
+    @apply text-4xl md:text-5xl lg:text-6xl font-serif font-bold tracking-tight leading-[1.1] mb-6;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  /* Minimal Ambient Canvas Glow */
+  .bg-lofi {
+    background: radial-gradient(circle at 15% 15%, var(--lofi-gradient-1), transparent 50%),
+                radial-gradient(circle at 85% 25%, var(--lofi-gradient-2), transparent 50%),
+                radial-gradient(circle at 50% 85%, var(--lofi-gradient-3), transparent 50%);
+    background-size: 140% 140%;
+    animation: gradientShift 18s ease infinite alternate;
+  }
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 30%; }
+  50% { background-position: 100% 70%; }
+  100% { background-position: 30% 100%; }
+}
