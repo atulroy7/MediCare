@@ -6,7 +6,9 @@ export default function PrescriptionDetailModal({ selectedRx, onClose, onApprove
 
     if (!selectedRx) return null;
 
-    const hasImage = selectedRx.photoUrl && (selectedRx.photoUrl.startsWith('data:image/') || selectedRx.photoUrl.startsWith('http') || selectedRx.photoUrl.startsWith('data:application/pdf'));
+    const hasFile = selectedRx.photoUrl && selectedRx.photoUrl.startsWith('data:');
+    const isPdf = hasFile && selectedRx.photoUrl.startsWith('data:application/pdf');
+    const hasImage = hasFile && !isPdf;
 
     return (
         <>
@@ -73,16 +75,34 @@ export default function PrescriptionDetailModal({ selectedRx, onClose, onApprove
                                             View Full Screen Image
                                         </button>
                                     </div>
+                                ) : isPdf ? (
+                                    <div className="w-full space-y-3">
+                                        <iframe
+                                            src={selectedRx.photoUrl}
+                                            title="Prescription PDF"
+                                            className="w-full rounded-xl border border-border"
+                                            style={{ minHeight: '260px', height: '260px' }}
+                                        />
+                                        <a
+                                            href={selectedRx.photoUrl}
+                                            download={selectedRx.filename || 'prescription.pdf'}
+                                            className="w-full py-2 px-4 rounded-xl bg-primary/10 text-primary font-bold text-xs hover:bg-primary/20 transition-all flex items-center justify-center gap-1.5 border border-primary/20"
+                                        >
+                                            <Icon name="Download" className="w-4 h-4" />
+                                            Download PDF
+                                        </a>
+                                    </div>
                                 ) : (
                                     <div className="py-8 flex flex-col items-center justify-center text-center space-y-3">
-                                        <div className="w-16 h-16 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
-                                            <Icon name="FileText" className="w-8 h-8" />
+                                        <div className="w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
+                                            <Icon name="AlertTriangle" className="w-8 h-8" />
                                         </div>
                                         <div>
                                             <p className="font-mono text-xs font-bold text-text truncate max-w-[240px] mx-auto">
                                                 {selectedRx.filename || 'prescription_document.pdf'}
                                             </p>
-                                            <p className="text-[11px] text-text-muted mt-1">Uploaded: {selectedRx.date || 'Recent'}</p>
+                                            <p className="text-[11px] text-amber-600 mt-1 font-semibold">File preview not available</p>
+                                            <p className="text-[10px] text-text-muted mt-0.5">Uploaded: {selectedRx.date || 'Recent'}</p>
                                         </div>
                                         <div className="p-3 bg-surface rounded-xl border border-border text-left w-full space-y-1">
                                             <p className="text-[10px] font-bold text-text-muted uppercase">Medicines Summary</p>

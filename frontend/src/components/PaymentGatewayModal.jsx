@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import Icon from './Icons';
 import toast from 'react-hot-toast';
 
 export default function PaymentGatewayModal({ isOpen, onClose, totalAmount, cartItems, onPaymentSuccess }) {
+    const { user } = useAuth();
     const [selectedMethod, setSelectedMethod] = useState('upi'); // 'upi', 'card', 'netbanking', 'wallet', 'cod'
     
     // Form States
@@ -43,6 +45,28 @@ export default function PaymentGatewayModal({ isOpen, onClose, totalAmount, cart
 
     const handleInitiatePayment = (e) => {
         e.preventDefault();
+
+        // ── FINAL GUARD: Re-verify prescription approval right before payment ──
+        if (user) {
+            const cleanEmail = (user.email || '').toLowerCase();
+            let hasApproved = false;
+            try {
+                const globalRx = JSON.parse(localStorage.getItem('jaya_all_prescriptions') || '[]');
+                const emailRx = JSON.parse(localStorage.getItem(`jaya_prescriptions_${cleanEmail}`) || '[]');
+                const sessionRx = JSON.parse(sessionStorage.getItem('jaya_session_prescriptions') || '[]');
+                const all = [
+                    ...globalRx.filter(r => r.userEmail && r.userEmail.toLowerCase() === cleanEmail),
+                    ...emailRx,
+                    ...sessionRx.filter(r => r.userEmail && r.userEmail.toLowerCase() === cleanEmail)
+                ];
+                hasApproved = all.some(r => r.status === 'APPROVED');
+            } catch (_) {}
+            if (!hasApproved) {
+                toast.error('🔒 Payment BLOCKED: No approved prescription found. Please get Medical Agent approval first.', { duration: 6000 });
+                onClose();
+                return;
+            }
+        }
 
         if (selectedMethod === 'upi' && !upiId.trim() && upiApp === 'custom') {
             toast.error('Please enter a valid UPI ID (e.g. name@okaxis)');

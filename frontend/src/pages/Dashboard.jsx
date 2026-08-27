@@ -37,10 +37,11 @@ export default function Dashboard() {
         address: item.address || '',
         notes: item.notes || '',
         photoUrl: item.photoUrl || '',
-        medicinesSummary: item.medicinesSummary || 'General Prescription Upload'
+        medicinesSummary: item.medicinesSummary || 'General Prescription Upload',
+        agentSuggestion: item.agentSuggestion || item.agentNotes || ''
     });
 
-    // Load and sync data from LocalStorage & Backend API
+    // Load and sync data from LocalStorage, SessionStorage & Backend API
     const loadDashboardData = async () => {
         if (!user) return;
 
@@ -48,51 +49,135 @@ export default function Dashboard() {
         const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
         if (role === 'customer') {
-            const globalRx = JSON.parse(localStorage.getItem('jaya_all_prescriptions') || '[]');
-            const emailKeyRx = JSON.parse(localStorage.getItem(`jaya_prescriptions_${cleanEmail}`) || '[]');
-            const idKeyRx = user.id ? JSON.parse(localStorage.getItem(`jaya_prescriptions_${user.id}`) || '[]') : [];
-
-            const localMapped = [...globalRx.filter(r => r.userEmail && r.userEmail.toLowerCase() === cleanEmail), ...emailKeyRx, ...idKeyRx].map(mapRx);
-            
             const rxMap = new Map();
-            localMapped.forEach(r => { if (r && r.id) rxMap.set(r.id, r); });
 
-            // Fetch from MongoDB via Backend API
+            // 1. LocalStorage
+            try {
+                const globalRx = JSON.parse(localStorage.getItem('jaya_all_prescriptions') || '[]');
+                const emailKeyRx = JSON.parse(localStorage.getItem(`jaya_prescriptions_${cleanEmail}`) || '[]');
+                const idKeyRx = user.id ? JSON.parse(localStorage.getItem(`jaya_prescriptions_${user.id}`) || '[]') : [];
+
+                [...globalRx.filter(r => r.userEmail && r.userEmail.toLowerCase() === cleanEmail), ...emailKeyRx, ...idKeyRx]
+                    .map(mapRx)
+                    .forEach(r => { if (r && r.id) rxMap.set(r.id, r); });
+            } catch (_) {}
+
+            // 2. SessionStorage
+            try {
+                const sessionRx = JSON.parse(sessionStorage.getItem('jaya_session_prescriptions') || '[]');
+                sessionRx.filter(r => r.userEmail && r.userEmail.toLowerCase() === cleanEmail).forEach(r => {
+                    if (r && r.id) {
+                        const existing = rxMap.get(r.id);
+                        rxMap.set(r.id, { ...existing, ...mapRx(r), photoUrl: r.photoUrl || existing?.photoUrl });
+                    }
+                });
+            } catch (_) {}
+
+            // 3. Backend API
             try {
                 const res = await fetch(`${backendUrl}/prescriptions/my-prescriptions?email=${encodeURIComponent(cleanEmail)}`);
                 if (res.ok) {
                     const data = await res.json();
                     if (data.success && Array.isArray(data.prescriptions)) {
-                        data.prescriptions.map(mapRx).forEach(r => rxMap.set(r.id, r));
+                        data.prescriptions.map(mapRx).forEach(r => {
+                            if (r && r.id) {
+                                const existing = rxMap.get(r.id);
+                                rxMap.set(r.id, { ...existing, ...r, photoUrl: existing?.photoUrl || r.photoUrl });
+                            }
+                        });
                     }
                 }
             } catch (err) {
                 console.warn('Backend API fetch for prescriptions failed:', err.message);
             }
 
-            setUserPrescriptions(Array.from(rxMap.values()));
+            const sortByLatest = (a, b) => {
+                const tA = a.timestamp || (a.createdAt ? new Date(a.createdAt).getTime() : 0);
+                const tB = b.timestamp || (b.createdAt ? new Date(b.createdAt).getTime() : 0);
+                if (tA && tB && tA !== tB) return tB - tA;
+                return (b.id || '').localeCompare(a.id || '');
+            };
 
+            setUserPrescriptions(Array.from(rxMap.values()).sort(sortByLatest));
             const orderData = JSON.parse(localStorage.getItem(userOrderKey) || '[]');
             setUserOrders(orderData);
         } else if (role === 'agent') {
-            const storedQueue = JSON.parse(localStorage.getItem('jaya_all_prescriptions') || '[]').map(mapRx);
             const rxMap = new Map();
-            storedQueue.forEach(r => { if (r && r.id) rxMap.set(r.id, r); });
 
-            // Fetch all from MongoDB via Backend API
+            // 1. Check all jaya_prescriptions_* keys & jaya_all_prescriptions in localStorage
+            try {
+                const globalRx = JSON.parse(localStorage.getItem('jaya_all_prescriptions') || '[]');
+                if (Array.isArray(globalRx)) {
+                    globalRx.map(mapRx).forEach(r => { if (r && r.id) rxMap.set(r.id, r); });
+                }
+
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && (key.startsWith('jaya_prescriptions_') || key === 'jaya_all_prescriptions')) {
+                        const items = JSON.parse(localStorage.getItem(key) || '[]');
+                        if (Array.isArray(items)) {
+                            items.map(mapRx).forEach(r => {
+                                if (r && r.id) {
+                                    if (rxMap.has(r.id)) {
+                                        const existing = rxMap.get(r.id);
+                                        rxMap.set(r.id, { ...existing, ...r, photoUrl: r.photoUrl || existing.photoUrl });
+                                    } else {
+                                        rxMap.set(r.id, r);
+                                    }
+                                }
+                            });
+                        }
+                    }
+                }
+            } catch (_) {}
+
+            // 2. Merge from sessionStorage (for live preview/full photoUrl of current session uploads)
+            try {
+                const sessionRx = JSON.parse(sessionStorage.getItem('jaya_session_prescriptions') || '[]');
+                if (Array.isArray(sessionRx)) {
+                    sessionRx.map(mapRx).forEach(r => {
+                        if (r && r.id) {
+                            if (rxMap.has(r.id)) {
+                                const existing = rxMap.get(r.id);
+                                rxMap.set(r.id, { ...existing, ...r, photoUrl: r.photoUrl || existing.photoUrl });
+                            } else {
+                                rxMap.set(r.id, r);
+                            }
+                        }
+                    });
+                }
+            } catch (_) {}
+
+            // 3. Fetch from MongoDB via Backend API
             try {
                 const res = await fetch(`${backendUrl}/prescriptions/all`);
                 if (res.ok) {
                     const data = await res.json();
                     if (data.success && Array.isArray(data.prescriptions)) {
-                        data.prescriptions.map(mapRx).forEach(r => rxMap.set(r.id, r));
+                        data.prescriptions.map(mapRx).forEach(r => {
+                            if (r && r.id) {
+                                if (rxMap.has(r.id)) {
+                                    const existing = rxMap.get(r.id);
+                                    rxMap.set(r.id, { ...existing, ...r, photoUrl: existing.photoUrl || r.photoUrl });
+                                } else {
+                                    rxMap.set(r.id, r);
+                                }
+                            }
+                        });
                     }
                 }
             } catch (err) {
                 console.warn('Backend API fetch all prescriptions failed:', err.message);
             }
 
-            setAgentQueue(Array.from(rxMap.values()));
+            const sortByLatest = (a, b) => {
+                const tA = a.timestamp || (a.createdAt ? new Date(a.createdAt).getTime() : 0);
+                const tB = b.timestamp || (b.createdAt ? new Date(b.createdAt).getTime() : 0);
+                if (tA && tB && tA !== tB) return tB - tA;
+                return (b.id || '').localeCompare(a.id || '');
+            };
+
+            setAgentQueue(Array.from(rxMap.values()).sort(sortByLatest));
         }
     };
 
@@ -110,10 +195,33 @@ export default function Dashboard() {
     }, [user, role, userRxKey, userOrderKey]);
 
     const handleApprovePrescription = async (id) => {
-        const updated = agentQueue.map(p => p.id === id ? { ...p, status: 'APPROVED' } : p);
+        const updated = agentQueue.map(p => (p.id === id || p.rxId === id || p._id === id) ? { ...p, status: 'APPROVED' } : p);
         setAgentQueue(updated);
-        localStorage.setItem('jaya_all_prescriptions', JSON.stringify(updated));
 
+        // 1. Update all matching localStorage keys
+        try {
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && (key.startsWith('jaya_prescriptions_') || key === 'jaya_all_prescriptions')) {
+                    const items = JSON.parse(localStorage.getItem(key) || '[]');
+                    if (Array.isArray(items)) {
+                        const updatedItems = items.map(p => 
+                            (p.id === id || p.rxId === id || p._id === id) ? { ...p, status: 'APPROVED' } : p
+                        );
+                        localStorage.setItem(key, JSON.stringify(updatedItems));
+                    }
+                }
+            }
+        } catch (_) {}
+
+        // 2. Update sessionStorage
+        try {
+            const sessionRx = JSON.parse(sessionStorage.getItem('jaya_session_prescriptions') || '[]');
+            const updatedSession = sessionRx.map(p => (p.id === id || p.rxId === id || p._id === id) ? { ...p, status: 'APPROVED' } : p);
+            sessionStorage.setItem('jaya_session_prescriptions', JSON.stringify(updatedSession));
+        } catch (_) {}
+
+        // 3. Call backend API
         try {
             const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
             await fetch(`${backendUrl}/prescriptions/${id}/status`, {
@@ -125,20 +233,10 @@ export default function Dashboard() {
             console.warn('API approve prescription warning:', err.message);
         }
 
-        const target = agentQueue.find(p => p.id === id);
-        if (target) {
-            if (target.userEmail) {
-                const emailKey = `jaya_prescriptions_${target.userEmail.toLowerCase()}`;
-                const targetUserRx = JSON.parse(localStorage.getItem(emailKey) || '[]');
-                const updatedUserRx = targetUserRx.map(p => p.id === id ? { ...p, status: 'APPROVED' } : p);
-                localStorage.setItem(emailKey, JSON.stringify(updatedUserRx));
-            }
-        }
-
         window.dispatchEvent(new Event('jaya_prescription_update'));
         window.dispatchEvent(new Event('storage'));
 
-        if (selectedRx && selectedRx.id === id) {
+        if (selectedRx && (selectedRx.id === id || selectedRx.rxId === id || selectedRx._id === id)) {
             setSelectedRx(prev => ({ ...prev, status: 'APPROVED' }));
         }
 
@@ -146,10 +244,33 @@ export default function Dashboard() {
     };
 
     const handleRejectPrescription = async (id) => {
-        const updated = agentQueue.map(p => p.id === id ? { ...p, status: 'REJECTED' } : p);
+        const updated = agentQueue.map(p => (p.id === id || p.rxId === id || p._id === id) ? { ...p, status: 'REJECTED' } : p);
         setAgentQueue(updated);
-        localStorage.setItem('jaya_all_prescriptions', JSON.stringify(updated));
 
+        // 1. Update all matching localStorage keys
+        try {
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && (key.startsWith('jaya_prescriptions_') || key === 'jaya_all_prescriptions')) {
+                    const items = JSON.parse(localStorage.getItem(key) || '[]');
+                    if (Array.isArray(items)) {
+                        const updatedItems = items.map(p => 
+                            (p.id === id || p.rxId === id || p._id === id) ? { ...p, status: 'REJECTED' } : p
+                        );
+                        localStorage.setItem(key, JSON.stringify(updatedItems));
+                    }
+                }
+            }
+        } catch (_) {}
+
+        // 2. Update sessionStorage
+        try {
+            const sessionRx = JSON.parse(sessionStorage.getItem('jaya_session_prescriptions') || '[]');
+            const updatedSession = sessionRx.map(p => (p.id === id || p.rxId === id || p._id === id) ? { ...p, status: 'REJECTED' } : p);
+            sessionStorage.setItem('jaya_session_prescriptions', JSON.stringify(updatedSession));
+        } catch (_) {}
+
+        // 3. Call backend API
         try {
             const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
             await fetch(`${backendUrl}/prescriptions/${id}/status`, {
@@ -161,20 +282,10 @@ export default function Dashboard() {
             console.warn('API reject prescription warning:', err.message);
         }
 
-        const target = agentQueue.find(p => p.id === id);
-        if (target) {
-            if (target.userEmail) {
-                const emailKey = `jaya_prescriptions_${target.userEmail.toLowerCase()}`;
-                const targetUserRx = JSON.parse(localStorage.getItem(emailKey) || '[]');
-                const updatedUserRx = targetUserRx.map(p => p.id === id ? { ...p, status: 'REJECTED' } : p);
-                localStorage.setItem(emailKey, JSON.stringify(updatedUserRx));
-            }
-        }
-
         window.dispatchEvent(new Event('jaya_prescription_update'));
         window.dispatchEvent(new Event('storage'));
 
-        if (selectedRx && selectedRx.id === id) {
+        if (selectedRx && (selectedRx.id === id || selectedRx.rxId === id || selectedRx._id === id)) {
             setSelectedRx(prev => ({ ...prev, status: 'REJECTED' }));
         }
 
@@ -190,21 +301,33 @@ export default function Dashboard() {
 
         const updated = agentQueue.map(p => p.id === id ? { ...p, agentSuggestion: textToSave } : p);
         setAgentQueue(updated);
-        localStorage.setItem('jaya_all_prescriptions', JSON.stringify(updated));
+        try {
+            localStorage.setItem('jaya_all_prescriptions', JSON.stringify(updated));
+        } catch (_) {}
+
+        try {
+            const sessionRx = JSON.parse(sessionStorage.getItem('jaya_session_prescriptions') || '[]');
+            const updatedSession = sessionRx.map(p => (p.id === id || p.rxId === id) ? { ...p, agentSuggestion: textToSave } : p);
+            sessionStorage.setItem('jaya_session_prescriptions', JSON.stringify(updatedSession));
+        } catch (_) {}
 
         const target = agentQueue.find(p => p.id === id);
         if (target) {
             if (target.userEmail) {
                 const emailKey = `jaya_prescriptions_${target.userEmail.toLowerCase()}`;
-                const targetUserRx = JSON.parse(localStorage.getItem(emailKey) || '[]');
-                const updatedUserRx = targetUserRx.map(p => p.id === id ? { ...p, agentSuggestion: textToSave } : p);
-                localStorage.setItem(emailKey, JSON.stringify(updatedUserRx));
+                try {
+                    const targetUserRx = JSON.parse(localStorage.getItem(emailKey) || '[]');
+                    const updatedUserRx = targetUserRx.map(p => p.id === id ? { ...p, agentSuggestion: textToSave } : p);
+                    localStorage.setItem(emailKey, JSON.stringify(updatedUserRx));
+                } catch (_) {}
             }
             if (target.userId) {
                 const idKey = `jaya_prescriptions_${target.userId}`;
-                const targetIdRx = JSON.parse(localStorage.getItem(idKey) || '[]');
-                const updatedIdRx = targetIdRx.map(p => p.id === id ? { ...p, agentSuggestion: textToSave } : p);
-                localStorage.setItem(idKey, JSON.stringify(updatedIdRx));
+                try {
+                    const targetIdRx = JSON.parse(localStorage.getItem(idKey) || '[]');
+                    const updatedIdRx = targetIdRx.map(p => p.id === id ? { ...p, agentSuggestion: textToSave } : p);
+                    localStorage.setItem(idKey, JSON.stringify(updatedIdRx));
+                } catch (_) {}
             }
         }
 

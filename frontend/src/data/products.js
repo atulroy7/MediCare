@@ -632,6 +632,24 @@ export const products = [
         uses: ['Scalp care', 'Tear-free hair wash'],
     }),
 
+    buildProduct({
+        id: 32,
+        name: 'Himalaya Baby Rash Cream Trial Sachet',
+        category: 'Baby Care',
+        price: 1,
+        mrp: 2,
+        image: makeProductImage('Baby Rash Cream', 'Trial Sachet 4g', 'Himalaya', 'Baby Care', '#fdf2f8', '#fbcfe8', '#ec4899', creamJarIcon),
+        brand: 'Himalaya',
+        requiresPrescription: false,
+        manufacturer: 'Himalaya Wellness',
+        composition: 'Aloe Vera & Almond Oil soothing formula',
+        dosage: 'Apply gently on affected area after each diaper change.',
+        description: 'Trial sachet of Himalaya\'s gentle baby rash cream — soothing, fragrance-free, and safe for newborns.',
+        rating: 4.8,
+        reviews: 320,
+        uses: ['Diaper rash relief', 'Skin soothing', 'Redness prevention'],
+    }),
+
     // ─── DIABETIC CARE ─────────────────────────────────────────────────────────
     buildProduct({
         id: 23,

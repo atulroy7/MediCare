@@ -70,9 +70,9 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 // Body parsing
-// Note: We're using standard JSON parsing. For Razorpay webhooks, raw body parsing might be needed in production.
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Increased limit for base64 prescription images and PDF attachments
+app.use(express.json({ limit: '25mb' }));
+app.use(express.urlencoded({ limit: '25mb', extended: true }));
 
 // Rate Limiting
 app.use('/api', globalLimiter);

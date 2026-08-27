@@ -68,18 +68,17 @@ export default function PrescriptionUpload() {
             return;
         }
 
+        // CRITICAL: define cleanEmail once here — used throughout handleSubmit
+        const cleanEmail = (user.email || '').toLowerCase();
+
         setSending(true);
         try {
-            // Read actual uploaded image file as DataURL string
+            // Read ALL file types as DataURL (images AND PDFs) so the agent can view them
             const photoUrlData = await new Promise((resolve) => {
-                if (file && file.type.startsWith('image/')) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => resolve(e.target.result);
-                    reader.onerror = () => resolve(null);
-                    reader.readAsDataURL(file);
-                } else {
-                    resolve(null);
-                }
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = () => resolve(null);
+                reader.readAsDataURL(file);
             });
 
             if (emailConfigured) {
@@ -114,6 +113,8 @@ export default function PrescriptionUpload() {
                 address: form.address || user.address,
                 notes: form.notes || '',
                 date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+                createdAt: new Date().toISOString(),
+                timestamp: Date.now(),
                 status: 'PENDING_VERIFICATION',
                 filename: file.name,
                 photoUrl: photoUrlData,
@@ -130,6 +131,8 @@ export default function PrescriptionUpload() {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
+                        rxId: rxItem.id,
+                        id: rxItem.id,
                         patient_name: form.patient_name || user.name,
                         phone: form.phone || user.phone,
                         address: form.address || user.address,
@@ -145,31 +148,59 @@ export default function PrescriptionUpload() {
                 console.warn('Backend API prescription upload warning:', apiErr.message);
             }
 
-            const cleanEmail = user.email.toLowerCase();
+            // Save FULL version (with DataURL) to sessionStorage for same-session display
+            const rxItemFull = { ...rxItem };
+            // Save COMPACT version (no large DataURL) to localStorage as fallback
+            const rxItemCompact = { ...rxItem, photoUrl: null };
 
-            // LocalStorage backup
+            // --- PRIMARY: Save to localStorage with correct email key ---
+            const emailKey = `jaya_prescriptions_${cleanEmail}`;
             try {
-                const emailKey = `jaya_prescriptions_${cleanEmail}`;
                 const existingEmailRx = JSON.parse(localStorage.getItem(emailKey) || '[]');
-                localStorage.setItem(emailKey, JSON.stringify([rxItem, ...existingEmailRx.filter(r => r.id !== rxItem.id)]));
-
-                const globalRx = JSON.parse(localStorage.getItem('jaya_all_prescriptions') || '[]');
-                localStorage.setItem('jaya_all_prescriptions', JSON.stringify([rxItem, ...globalRx.filter(r => r.id !== rxItem.id)]));
-            } catch (storageErr) {
-                console.warn('LocalStorage image quota reached; prescription saved in MongoDB Atlas.');
+                const updatedEmailRx = [rxItemFull, ...existingEmailRx.filter(r => r.id !== rxItem.id)];
+                localStorage.setItem(emailKey, JSON.stringify(updatedEmailRx));
+            } catch (e1) {
+                // Full DataURL too large — store compact version
+                console.warn('Quota hit saving full image for email key; saving compact:', e1.message);
+                try {
+                    const existingEmailRx = JSON.parse(localStorage.getItem(emailKey) || '[]');
+                    localStorage.setItem(emailKey, JSON.stringify([rxItemCompact, ...existingEmailRx.filter(r => r.id !== rxItem.id)]));
+                } catch (_) {}
             }
+
+            // --- SECONDARY: Update the global all-prescriptions list ---
+            try {
+                const globalRx = JSON.parse(localStorage.getItem('jaya_all_prescriptions') || '[]');
+                localStorage.setItem('jaya_all_prescriptions', JSON.stringify([rxItemFull, ...globalRx.filter(r => r.id !== rxItem.id)]));
+            } catch (e2) {
+                console.warn('Quota hit saving full image to global list; saving compact:', e2.message);
+                try {
+                    const globalRx = JSON.parse(localStorage.getItem('jaya_all_prescriptions') || '[]');
+                    localStorage.setItem('jaya_all_prescriptions', JSON.stringify([rxItemCompact, ...globalRx.filter(r => r.id !== rxItem.id)]));
+                } catch (_) {}
+            }
+
+            // Also keep full version in sessionStorage so agent/customer can view image this session
+            try {
+                const sessionRx = JSON.parse(sessionStorage.getItem('jaya_session_prescriptions') || '[]');
+                sessionStorage.setItem('jaya_session_prescriptions', JSON.stringify([rxItemFull, ...sessionRx.filter(r => r.id !== rxItem.id)]));
+            } catch (_) { /* sessionStorage full */ }
 
             // Trigger real-time sync event
             window.dispatchEvent(new Event('jaya_prescription_update'));
             window.dispatchEvent(new Event('storage'));
 
             toast.success('Prescription submitted successfully for Pharmacist review!');
-            setForm(initialForm);
+            setForm({
+                ...initialForm,
+                patient_name: user?.name || '',
+                phone: user?.phone || '',
+                address: user?.address || ''
+            });
             setFile(null);
-            event.currentTarget.reset();
 
             setTimeout(() => {
-                navigate('/dashboard');
+                navigate('/prescription');
             }, 1000);
         } catch (error) {
             console.error(error);

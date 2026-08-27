@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Seo from '../components/Seo';
@@ -8,94 +8,147 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
+// Read all prescriptions for a user from ALL storage sources
+function readPrescriptionsForUser(userObj) {
+    if (!userObj) return [];
+    const cleanEmail = (userObj.email || '').toLowerCase();
+    const map = new Map();
+    try {
+        const globalRx = JSON.parse(localStorage.getItem('jaya_all_prescriptions') || '[]');
+        const emailRx = JSON.parse(localStorage.getItem(`jaya_prescriptions_${cleanEmail}`) || '[]');
+        const idRx = userObj.id ? JSON.parse(localStorage.getItem(`jaya_prescriptions_${userObj.id}`) || '[]') : [];
+        // Also scan ALL jaya_prescriptions_* keys to catch any email/id mismatches
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('jaya_prescriptions_')) {
+                try {
+                    const items = JSON.parse(localStorage.getItem(key) || '[]');
+                    if (Array.isArray(items)) {
+                        items.filter(r => r && r.userEmail && r.userEmail.toLowerCase() === cleanEmail)
+                            .forEach(r => { if (r.id) map.set(r.id, r); });
+                    }
+                } catch (_) {}
+            }
+        }
+        [...globalRx.filter(r => r && r.userEmail && r.userEmail.toLowerCase() === cleanEmail), ...emailRx, ...idRx]
+            .forEach(r => { if (r && r.id) map.set(r.id, r); });
+    } catch (_) {}
+    try {
+        const sessionRx = JSON.parse(sessionStorage.getItem('jaya_session_prescriptions') || '[]');
+        sessionRx.filter(r => r && r.userEmail && r.userEmail.toLowerCase() === cleanEmail)
+            .forEach(r => { if (r && r.id) { const ex = map.get(r.id); map.set(r.id, { ...ex, ...r }); } });
+    } catch (_) {}
+    return Array.from(map.values());
+}
+
 export default function Cart() {
     const { items, setItemQuantity, removeFromCart, clearCart, subtotal } = useCart();
     const { user, isAuthenticated } = useAuth();
     const navigate = useNavigate();
     const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+    const [promoCode, setPromoCode] = useState('');
+    const [appliedPromo, setAppliedPromo] = useState(null);
 
-    const deliveryCharge = subtotal > 999 || subtotal === 0 ? 0 : 49;
+    // Prescription status as proper React STATE — refreshed on every sync event
+    const [rxStatus, setRxStatus] = useState({ hasApproved: false, hasPending: false, hasRejected: false, loaded: false });
+
+    const refreshRxStatus = () => {
+        if (!user) {
+            setRxStatus({ hasApproved: false, hasPending: false, hasRejected: false, loaded: true });
+            return;
+        }
+        const prescriptions = readPrescriptionsForUser(user);
+        console.log('[Cart] Prescriptions found:', prescriptions.map(p => `${p.id}=${p.status}`));
+        setRxStatus({
+            hasApproved: prescriptions.some(rx => rx.status === 'APPROVED'),
+            hasPending: prescriptions.some(rx => rx.status === 'PENDING_VERIFICATION'),
+            hasRejected: prescriptions.some(rx => rx.status === 'REJECTED'),
+            loaded: true,
+        });
+    };
+
+    // DEV UTILITY: Wipe ALL prescription data so you can test the flow from scratch
+    const clearAllPrescriptionData = () => {
+        const keysToDelete = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('jaya_')) keysToDelete.push(key);
+        }
+        keysToDelete.forEach(k => localStorage.removeItem(k));
+        try { sessionStorage.removeItem('jaya_session_prescriptions'); } catch (_) {}
+        window.dispatchEvent(new Event('jaya_prescription_update'));
+        toast.success('All prescription data cleared. Upload a new prescription to start fresh.', { duration: 5000, icon: '🗑️' });
+    };
+
+    useEffect(() => {
+        refreshRxStatus();
+        const handleSync = () => refreshRxStatus();
+        window.addEventListener('jaya_prescription_update', handleSync);
+        window.addEventListener('storage', handleSync);
+        return () => {
+            window.removeEventListener('jaya_prescription_update', handleSync);
+            window.removeEventListener('storage', handleSync);
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user]);
+
+    const isFreeDelivery = subtotal > 999 || subtotal === 0 || appliedPromo === 'FREEDEL';
+    const deliveryCharge = isFreeDelivery ? 0 : 49;
     const taxes = Math.round(subtotal * 0.05);
-    const [promoCode, setPromoCode] = useState('JAYA10');
-    const discount = promoCode === 'JAYA10' ? Math.round(subtotal * 0.1) : 0;
+    const discount = appliedPromo === 'JAYA10' ? Math.round(subtotal * 0.1) : 0;
     const total = Math.max(0, subtotal + deliveryCharge + taxes - discount);
 
     const applyPromo = () => {
-        if (promoCode.trim().toUpperCase() === 'JAYA10') {
-            toast.success('Promo code applied (10% OFF).');
+        const code = promoCode.trim().toUpperCase();
+        if (code === 'JAYA10') {
+            setAppliedPromo('JAYA10');
+            toast.success('Promo code JAYA10 applied — 10% OFF!');
+        } else if (code === 'FREEDEL') {
+            setAppliedPromo('FREEDEL');
+            toast.success('Promo code FREEDEL applied — Free Delivery!');
+        } else if (code === '') {
+            toast.error('Please enter a promo code.');
         } else {
             toast.error('Promo code not recognized.');
         }
     };
 
+    const removePromo = () => {
+        setAppliedPromo(null);
+        setPromoCode('');
+        toast('Promo code removed.', { icon: '🗑️' });
+    };
+
     const handleCheckout = () => {
         if (!isAuthenticated || !user) {
-            toast.error('Please log in or create an account to complete your order.', {
-                duration: 4000,
-                icon: '🔒'
-            });
+            toast.error('Please log in to complete your order.', { duration: 4000, icon: '🔒' });
             navigate('/login', { state: { from: '/cart' } });
             return;
         }
-
         if (items.length === 0) {
             toast.error('Your cart is empty.');
             return;
         }
-
-        // Universal Strict Requirement: Orders cannot take place before Medical Agent approval!
-        const getUserPrescriptions = (userObj) => {
-            if (!userObj) return [];
-            const cleanEmail = userObj.email.toLowerCase();
-
-            const globalRx = JSON.parse(localStorage.getItem('jaya_all_prescriptions') || '[]');
-            const emailKeyRx = JSON.parse(localStorage.getItem(`jaya_prescriptions_${cleanEmail}`) || '[]');
-            const idKeyRx = userObj.id ? JSON.parse(localStorage.getItem(`jaya_prescriptions_${userObj.id}`) || '[]') : [];
-
-            const map = new Map();
-            [...globalRx.filter(r => r.userEmail && r.userEmail.toLowerCase() === cleanEmail), ...emailKeyRx, ...idKeyRx].forEach(r => {
-                if (r && r.id) map.set(r.id, r);
-            });
-
-            return Array.from(map.values());
-        };
-
-        const userPrescriptions = getUserPrescriptions(user);
-
-        const currentCartSignature = items.length > 0 
-            ? items.map(i => `${i.id}:${i.quantity}`).sort().join('|') 
-            : 'empty_cart';
-
-        // Prescription approval must match the specific cart items
-        const hasApprovedRxForCurrentCart = userPrescriptions.some(rx => 
-            rx.status === 'APPROVED' && (rx.cartSignature === currentCartSignature || rx.cartSignature === 'general_prescription')
-        );
-
-        const hasPendingRx = userPrescriptions.some(rx => rx.status === 'PENDING_VERIFICATION');
-        const hasRejectedRx = userPrescriptions.some(rx => rx.status === 'REJECTED');
-
-        if (!hasApprovedRxForCurrentCart) {
-            if (userPrescriptions.length === 0) {
-                toast.error('ORDER BLOCKED: Medical Agent approval is mandatory for your cart items! Please upload your doctor prescription first.', { duration: 6000 });
+        // Re-read fresh from storage at click time — source of truth
+        const freshPrescriptions = readPrescriptionsForUser(user);
+        const freshApproved = freshPrescriptions.some(rx => rx.status === 'APPROVED');
+        const freshPending = freshPrescriptions.some(rx => rx.status === 'PENDING_VERIFICATION');
+        const freshRejected = freshPrescriptions.some(rx => rx.status === 'REJECTED');
+        console.log('[Cart] Checkout attempt — prescriptions:', freshPrescriptions.map(p => `${p.id}=${p.status}`));
+        if (!freshApproved) {
+            if (freshPending) {
+                toast.error('🔒 Order Blocked: Prescription is PENDING agent review. Wait for agent approval.', { duration: 6000 });
+                return;
+            }
+            if (freshRejected) {
+                toast.error('🔒 Order Blocked: Prescription was REJECTED. Upload a new valid prescription.', { duration: 6000 });
                 navigate('/prescription');
                 return;
             }
-
-            if (hasRejectedRx && !hasPendingRx) {
-                toast.error('ORDER BLOCKED: Your prescription was REJECTED by the Medical Agent. Order cannot take place until you upload a valid prescription.', { duration: 6000 });
-                return;
-            }
-
-            if (hasPendingRx) {
-                toast.error('ORDER BLOCKED: Your prescription is PENDING Medical Agent approval for this cart. Orders CANNOT take place before agent approval.', { duration: 6000 });
-                return;
-            }
-
-            toast.error('ORDER BLOCKED: Medicines in cart changed! Medical Agent approval is required for this specific combination of medicines.', { duration: 6000 });
+            toast.error('🔒 Order Blocked: Upload a prescription and get Medical Agent approval first!', { duration: 6000 });
+            navigate('/prescription');
             return;
         }
-
-        // Open Payment Gateway Modal
         setIsPaymentOpen(true);
     };
 
@@ -173,6 +226,7 @@ export default function Cart() {
                 <div className="absolute top-0 right-0 w-1/2 h-96 bg-primary/10 blur-[100px] pointer-events-none" />
                 
                 <div className="mx-auto max-w-7xl px-4 py-12 md:py-20 lg:px-8 relative z-10">
+
                     <motion.div 
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -269,18 +323,34 @@ export default function Cart() {
                             <div className="glass-card p-6 md:p-8">
                                 <div className="flex items-center justify-between border-b border-border pb-6 mb-6">
                                     <h2 className="font-serif text-2xl font-semibold text-text">Order summary</h2>
-                                    <button type="button" onClick={clearCart} className="text-sm font-medium text-text-muted hover:text-primary transition-colors">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            if (window.confirm('Remove all items from your cart? This cannot be undone.')) {
+                                                clearCart();
+                                                toast('Cart cleared.', { icon: '🗑️' });
+                                            }
+                                        }}
+                                        className="text-sm font-medium text-text-muted hover:text-red-500 transition-colors"
+                                    >
                                         Clear cart
                                     </button>
                                 </div>
 
                                 <div className="space-y-4 text-sm">
                                     <SummaryRow label="Subtotal" value={`₹${subtotal}`} />
-                                    <SummaryRow label="Delivery charge" value={deliveryCharge ? `₹${deliveryCharge}` : 'Free'} />
+                                    <SummaryRow
+                                        label="Delivery charge"
+                                        value={deliveryCharge ? `₹${deliveryCharge}` : 'Free'}
+                                        valueClass={isFreeDelivery && subtotal > 0 ? 'text-green-500 font-medium' : 'text-text'}
+                                    />
                                     <SummaryRow label="GST (5%)" value={`₹${taxes}`} />
-                                    
+
                                     {discount > 0 && (
-                                        <SummaryRow label="Promo discount" value={`-₹${discount}`} valueClass="text-green-500 font-medium" />
+                                        <SummaryRow label="Promo discount (JAYA10)" value={`-₹${discount}`} valueClass="text-green-500 font-medium" />
+                                    )}
+                                    {appliedPromo === 'FREEDEL' && (
+                                        <SummaryRow label="Free delivery (FREEDEL)" value="-₹49 saved" valueClass="text-green-500 font-medium" />
                                     )}
                                     
                                     <div className="border-t border-border pt-4 mt-6">
@@ -298,174 +368,132 @@ export default function Cart() {
                                     <label className="block text-sm font-medium text-text mb-2">
                                         Promo code
                                     </label>
-                                    <div className="flex gap-3">
-                                        <input
-                                            value={promoCode}
-                                            onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                                            placeholder="Enter code (e.g. JAYA10)"
-                                            className="w-full rounded-xl border border-border bg-bg px-4 py-3 outline-none focus:border-primary transition-colors text-sm placeholder:text-text-muted/60"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={applyPromo}
-                                            className="glass-button-secondary px-6"
-                                        >
-                                            Apply
-                                        </button>
-                                    </div>
+
+                                    {appliedPromo ? (
+                                        <div className="flex items-center justify-between rounded-xl border border-green-500/40 bg-green-500/10 px-4 py-3">
+                                            <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                                                <Icon name="Tag" className="w-4 h-4" />
+                                                <span className="text-sm font-bold tracking-wider">{appliedPromo}</span>
+                                                <span className="text-xs text-green-600/70 dark:text-green-400/70">
+                                                    {appliedPromo === 'JAYA10' ? '— 10% OFF' : '— Free Delivery'}
+                                                </span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={removePromo}
+                                                className="text-xs text-text-muted hover:text-red-500 transition-colors font-medium"
+                                            >
+                                                Remove
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex gap-3">
+                                            <input
+                                                value={promoCode}
+                                                onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                                                placeholder="Enter code (e.g. JAYA10)"
+                                                className="w-full rounded-xl border border-border bg-bg px-4 py-3 outline-none focus:border-primary transition-colors text-sm placeholder:text-text-muted/60"
+                                                onKeyDown={(e) => e.key === 'Enter' && applyPromo()}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={applyPromo}
+                                                className="glass-button-secondary px-6"
+                                            >
+                                                Apply
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {!appliedPromo && (
+                                        <div className="mt-2.5 flex flex-wrap gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => { setPromoCode('JAYA10'); }}
+                                                className="text-xs px-3 py-1 rounded-full border border-border text-text-muted hover:border-primary hover:text-primary transition-colors"
+                                            >
+                                                🏷️ JAYA10 — 10% off
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => { setPromoCode('FREEDEL'); }}
+                                                className="text-xs px-3 py-1 rounded-full border border-border text-text-muted hover:border-primary hover:text-primary transition-colors"
+                                            >
+                                                🚚 FREEDEL — Free delivery
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
 
-                                {/* Universal Agent Approval Status Alert Banner for Cart */}
-                                {user && (
-                                    (() => {
-                                        const getUserPrescriptions = (userObj) => {
-                                            if (!userObj) return [];
-                                            const cleanEmail = userObj.email.toLowerCase();
-
-                                            const globalRx = JSON.parse(localStorage.getItem('jaya_all_prescriptions') || '[]');
-                                            const emailKeyRx = JSON.parse(localStorage.getItem(`jaya_prescriptions_${cleanEmail}`) || '[]');
-                                            const idKeyRx = userObj.id ? JSON.parse(localStorage.getItem(`jaya_prescriptions_${userObj.id}`) || '[]') : [];
-
-                                            const map = new Map();
-                                            [...globalRx.filter(r => r.userEmail && r.userEmail.toLowerCase() === cleanEmail), ...emailKeyRx, ...idKeyRx].forEach(r => {
-                                                if (r && r.id) map.set(r.id, r);
-                                            });
-
-                                            return Array.from(map.values());
-                                        };
-
-                                        const currentCartSignature = items.length > 0 
-                                            ? items.map(i => `${i.id}:${i.quantity}`).sort().join('|') 
-                                            : 'empty_cart';
-
-                                        const userPrescriptions = getUserPrescriptions(user);
-                                        const hasApprovedForThisCart = userPrescriptions.some(rx => 
-                                            rx.status === 'APPROVED' && (rx.cartSignature === currentCartSignature || rx.cartSignature === 'general_prescription')
-                                        );
-                                        const hasApprovedOther = userPrescriptions.some(rx => rx.status === 'APPROVED');
-                                        const hasRejected = userPrescriptions.some(rx => rx.status === 'REJECTED');
-                                        const hasPending = userPrescriptions.some(rx => rx.status === 'PENDING_VERIFICATION');
-
-                                        if (hasApprovedForThisCart) {
-                                            return (
-                                                <div className="p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs flex items-center gap-2">
-                                                    <Icon name="CheckCircle" className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                                                    <span className="font-bold">Medical Agent Clearance Verified & Approved for this Cart ✓</span>
-                                                </div>
-                                            );
-                                        }
-
-                                        if (hasApprovedOther && !hasApprovedForThisCart) {
-                                            return (
-                                                <div className="p-4 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs space-y-1">
-                                                    <p className="font-bold flex items-center gap-1.5 text-sm">
-                                                        <Icon name="AlertTriangle" className="w-4 h-4 text-amber-500" />
-                                                        Cart Medicines Modified!
-                                                    </p>
-                                                    <p className="leading-relaxed opacity-90">
-                                                        You changed the medicines in your cart. A Medical Agent must review and approve a prescription for this updated list of medicines.
-                                                    </p>
-                                                    <Link to="/prescription" className="inline-block mt-2 font-bold text-amber-700 dark:text-amber-300 underline">
-                                                        Upload Prescription for New Cart Items →
-                                                    </Link>
-                                                </div>
-                                            );
-                                        }
-
-                                        if (hasRejected && !hasPending) {
-                                            return (
-                                                <div className="p-4 rounded-2xl bg-red-500/15 border border-red-500/30 text-red-700 dark:text-red-300 text-xs space-y-1">
-                                                    <p className="font-bold flex items-center gap-1.5 text-sm">
-                                                        <Icon name="XCircle" className="w-4 h-4 text-red-500" />
-                                                        Prescription REJECTED by Medical Agent
-                                                    </p>
-                                                    <p className="leading-relaxed opacity-90">
-                                                        Your doctor note was rejected by the Medical Agent. Order placement is disabled. Please upload a new valid prescription.
-                                                    </p>
-                                                    <Link to="/prescription" className="inline-block mt-2 font-bold text-red-600 dark:text-red-400 underline">
-                                                        Upload New Valid Prescription →
-                                                    </Link>
-                                                </div>
-                                            );
-                                        }
-
-                                        if (hasPending) {
-                                            return (
-                                                <div className="p-4 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs space-y-1">
-                                                    <p className="font-bold flex items-center gap-1.5 text-sm">
-                                                        <Icon name="Clock" className="w-4 h-4 text-amber-500" />
-                                                        Prescription Awaiting Agent Approval
-                                                    </p>
-                                                    <p className="leading-relaxed opacity-90">
-                                                        Your prescription is currently under review by a Medical Agent. Order placement will unlock automatically once the agent approves your doctor note.
-                                                    </p>
-                                                </div>
-                                            );
-                                        }
-
-                                        return (
-                                            <div className="p-4 rounded-2xl bg-primary/10 border border-primary/20 text-primary text-xs space-y-1">
-                                                <p className="font-bold flex items-center gap-1.5 text-sm">
-                                                    <Icon name="FileText" className="w-4 h-4" />
-                                                    Medical Agent Approval Mandatory
-                                                </p>
-                                                <p className="leading-relaxed text-text-muted">
-                                                    Medical Agent approval is mandatory before any order can take place. You must upload a doctor prescription and get agent clearance first.
-                                                </p>
-                                                <Link to="/prescription" className="inline-block mt-1 font-bold text-primary underline">
-                                                    Upload Prescription for Clearance →
-                                                </Link>
-                                            </div>
-                                        );
-                                    })()
+                                {/* Prescription Approval Status Banner — driven by React state, always fresh */}
+                                {isAuthenticated && rxStatus.loaded && (
+                                    rxStatus.hasApproved ? (
+                                        <div className="p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs flex items-center gap-2">
+                                            <Icon name="CheckCircle" className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                                            <span className="font-bold">Medical Agent Clearance Verified &amp; Approved ✓ — You can place your order!</span>
+                                        </div>
+                                    ) : rxStatus.hasPending ? (
+                                        <div className="p-4 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs space-y-1">
+                                            <p className="font-bold flex items-center gap-1.5 text-sm">
+                                                <Icon name="Clock" className="w-4 h-4 text-amber-500" />
+                                                Prescription Awaiting Agent Approval
+                                            </p>
+                                            <p className="leading-relaxed opacity-90">
+                                                Your prescription is under review by a Medical Agent. Order placement will unlock automatically once approved.
+                                            </p>
+                                        </div>
+                                    ) : rxStatus.hasRejected ? (
+                                        <div className="p-4 rounded-2xl bg-red-500/15 border border-red-500/30 text-red-700 dark:text-red-300 text-xs space-y-1">
+                                            <p className="font-bold flex items-center gap-1.5 text-sm">
+                                                <Icon name="XCircle" className="w-4 h-4 text-red-500" />
+                                                Prescription REJECTED by Medical Agent
+                                            </p>
+                                            <p className="leading-relaxed opacity-90">
+                                                Your prescription was rejected. Please upload a new valid prescription.
+                                            </p>
+                                            <Link to="/prescription" className="inline-block mt-2 font-bold text-red-600 dark:text-red-400 underline">
+                                                Upload New Prescription →
+                                            </Link>
+                                        </div>
+                                    ) : (
+                                        <div className="p-4 rounded-2xl bg-primary/10 border border-primary/20 text-primary text-xs space-y-1">
+                                            <p className="font-bold flex items-center gap-1.5 text-sm">
+                                                <Icon name="FileText" className="w-4 h-4" />
+                                                Medical Agent Approval Required
+                                            </p>
+                                            <p className="leading-relaxed text-text-muted">
+                                                Upload a doctor prescription and get Medical Agent clearance before placing any order.
+                                            </p>
+                                            <Link to="/prescription" className="inline-block mt-1 font-bold text-primary underline">
+                                                Upload Prescription →
+                                            </Link>
+                                        </div>
+                                    )
                                 )}
 
+                                {/* Checkout Button — uses rxStatus state, not inline reads */}
                                 {(() => {
-                                    const getUserPrescriptions = (userObj) => {
-                                        if (!userObj) return [];
-                                        const cleanEmail = userObj.email.toLowerCase();
-
-                                        const globalRx = JSON.parse(localStorage.getItem('jaya_all_prescriptions') || '[]');
-                                        const emailKeyRx = JSON.parse(localStorage.getItem(`jaya_prescriptions_${cleanEmail}`) || '[]');
-                                        const idKeyRx = userObj.id ? JSON.parse(localStorage.getItem(`jaya_prescriptions_${userObj.id}`) || '[]') : [];
-
-                                        const map = new Map();
-                                        [...globalRx.filter(r => r.userEmail && r.userEmail.toLowerCase() === cleanEmail), ...emailKeyRx, ...idKeyRx].forEach(r => {
-                                            if (r && r.id) map.set(r.id, r);
-                                        });
-
-                                        return Array.from(map.values());
-                                    };
-
-                                    const currentCartSignature = items.length > 0 
-                                        ? items.map(i => `${i.id}:${i.quantity}`).sort().join('|') 
-                                        : 'empty_cart';
-
-                                    const userPrescriptions = getUserPrescriptions(user);
-                                    const hasApprovedForThisCart = userPrescriptions.some(rx => 
-                                        rx.status === 'APPROVED' && (rx.cartSignature === currentCartSignature || rx.cartSignature === 'general_prescription')
-                                    );
-                                    const isBlocked = isAuthenticated && !hasApprovedForThisCart;
-
+                                    const isBlocked = !isAuthenticated || !rxStatus.hasApproved;
                                     return (
                                         <button
                                             type="button"
                                             onClick={handleCheckout}
                                             disabled={isBlocked}
+                                            style={{ pointerEvents: isBlocked ? 'none' : 'auto' }}
                                             className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${
-                                                isBlocked 
-                                                    ? 'bg-slate-300 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-border cursor-not-allowed opacity-70 shadow-none' 
+                                                isBlocked
+                                                    ? 'bg-slate-300 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-border cursor-not-allowed opacity-70 shadow-none select-none'
                                                     : 'glass-button-primary'
                                             }`}
                                         >
                                             {isBlocked ? (
                                                 <>
                                                     <Icon name="Lock" className="h-4 w-4 text-amber-500" />
-                                                    Order Blocked: Awaiting Agent Approval
+                                                    {!isAuthenticated ? 'Sign In Required' : 'Awaiting Agent Approval'}
                                                 </>
                                             ) : (
                                                 <>
-                                                    {isAuthenticated ? 'Place Order Now' : 'Sign In to Complete Order'}
+                                                    Place Order Now
                                                     <Icon name="ArrowRight" className="h-4 w-4 ml-1" />
                                                 </>
                                             )}

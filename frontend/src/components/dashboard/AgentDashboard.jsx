@@ -142,7 +142,7 @@ export default function AgentDashboard({
                                         <button
                                             type="button"
                                             onClick={() => setSelectedRx(item)}
-                                            className="px-3 py-2 rounded-xl bg-surface border border-border text-text font-bold text-xs hover:bg-primary/10 hover:text-primary transition-all flex items-center gap-1.5"
+                                            className="px-3.5 py-2 rounded-xl bg-surface border border-border text-text font-bold text-xs hover:bg-primary/10 hover:text-primary transition-all flex items-center gap-1.5 shadow-sm"
                                         >
                                             <Icon name="Eye" className="w-4 h-4" />
                                             Audit File
@@ -151,19 +151,27 @@ export default function AgentDashboard({
                                             type="button"
                                             onClick={() => handleApprovePrescription(item.id)}
                                             disabled={item.status === 'APPROVED'}
-                                            className="px-3 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-700 disabled:opacity-50 transition-all flex items-center gap-1.5"
+                                            className={`px-3.5 py-2 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 shadow-sm ${
+                                                item.status === 'APPROVED'
+                                                    ? 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/30 cursor-default'
+                                                    : 'bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95'
+                                            }`}
                                         >
                                             <Icon name="CheckCircle" className="w-4 h-4" />
-                                            Approve
+                                            {item.status === 'APPROVED' ? 'Approved ✓' : 'Approve'}
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => handleRejectPrescription(item.id)}
                                             disabled={item.status === 'REJECTED'}
-                                            className="px-3 py-2 rounded-xl bg-red-600/90 text-white font-bold text-xs hover:bg-red-700 disabled:opacity-50 transition-all flex items-center gap-1.5"
+                                            className={`px-3.5 py-2 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 shadow-sm ${
+                                                item.status === 'REJECTED'
+                                                    ? 'bg-red-500/20 text-red-600 border border-red-500/30 cursor-default'
+                                                    : 'bg-red-600 text-white hover:bg-red-700 active:scale-95'
+                                            }`}
                                         >
                                             <Icon name="XCircle" className="w-4 h-4" />
-                                            Reject
+                                            {item.status === 'REJECTED' ? 'Rejected ✗' : 'Reject'}
                                         </button>
                                     </div>
                                 </div>

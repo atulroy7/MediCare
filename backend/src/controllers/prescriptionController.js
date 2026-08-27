@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Prescription from '../models/Prescription.js';
 import User from '../models/User.js';
 import { asyncHandler, Errors } from '../utils/errors.js';
@@ -37,21 +38,34 @@ const IN_MEMORY_QUEUE = [
  * POST /api/prescriptions
  */
 export const createPrescription = asyncHandler(async (req, res) => {
-    const { patient_name, phone, address, notes, filename, photoUrl, userEmail, userId, medicinesSummary } = req.body;
+    const { 
+        patient_name, 
+        phone, 
+        address, 
+        notes, 
+        filename, 
+        photoUrl, 
+        userEmail, 
+        userId, 
+        medicinesSummary,
+        rxId: incomingRxId,
+        id: incomingId
+    } = req.body;
 
     const email = (userEmail || req.user?.email || '').toLowerCase().trim();
     if (!email) {
         throw Errors.badRequest('User email is required to submit a prescription.');
     }
 
-    const rxId = 'RX-' + Math.floor(1000 + Math.random() * 9000);
+    const rxId = incomingRxId || incomingId || ('RX-' + Math.floor(1000 + Math.random() * 9000));
     let rxDoc = null;
 
     if (process.env.MONGO_URI) {
         try {
+            const validUserId = userId && mongoose.Types.ObjectId.isValid(userId) ? userId : undefined;
             rxDoc = await Prescription.create({
                 rxId,
-                user: userId || req.user?.id || undefined,
+                user: validUserId,
                 userEmail: email,
                 patientName: patient_name || req.user?.name || 'Patient',
                 phone: phone || '',
@@ -125,19 +139,32 @@ export const getUserPrescriptions = asyncHandler(async (req, res) => {
  * GET /api/prescriptions/all
  */
 export const getAllPrescriptions = asyncHandler(async (req, res) => {
-    let prescriptions = [];
+    const map = new Map();
 
+    // 1. Add in-memory items first
+    IN_MEMORY_QUEUE.forEach(p => {
+        const key = p.rxId || p._id;
+        if (key) map.set(key, p);
+    });
+
+    // 2. Fetch and merge from MongoDB
     if (process.env.MONGO_URI) {
         try {
-            prescriptions = await Prescription.find({}).sort({ createdAt: -1 });
+            const dbPrescriptions = await Prescription.find({}).sort({ createdAt: -1 });
+            dbPrescriptions.forEach(p => {
+                const key = p.rxId || p._id.toString();
+                if (key) map.set(key, p);
+            });
         } catch (err) {
             console.warn('MongoDB query failed for all prescriptions:', err.message);
         }
     }
 
-    if (prescriptions.length === 0) {
-        prescriptions = IN_MEMORY_QUEUE;
-    }
+    const prescriptions = Array.from(map.values()).sort((a, b) => {
+        const dateA = new Date(a.createdAt || 0);
+        const dateB = new Date(b.createdAt || 0);
+        return dateB - dateA;
+    });
 
     res.json({
         success: true,
