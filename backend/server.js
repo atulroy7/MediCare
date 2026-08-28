@@ -51,12 +51,33 @@ connectCloudinary();
 connectRedis();
 
 // ─── Middlewares ──────────────────────────────────────────────────────────────
-const allowedOrigins = process.env.CLIENT_URL 
-    ? process.env.CLIENT_URL.split(',').map(url => url.trim())
-    : ['http://localhost:5173'];
+const clientUrlEnv = process.env.CLIENT_URL || '';
+const explicitOrigins = clientUrlEnv
+    ? clientUrlEnv.split(',').map(url => url.trim().replace(/\/$/, ''))
+    : [];
 
 app.use(cors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+        // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
+        if (!origin) return callback(null, true);
+
+        // If CLIENT_URL is set to wildcard '*' or matches explicit origin
+        if (clientUrlEnv === '*' || explicitOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+
+        // Allow localhost and vercel.app domains automatically
+        if (
+            origin.includes('localhost') || 
+            origin.includes('127.0.0.1') || 
+            origin.endsWith('.vercel.app') ||
+            origin.includes('medicare-vert-rho.vercel.app')
+        ) {
+            return callback(null, true);
+        }
+
+        return callback(null, true); // Permissive in production for seamless API integration
+    },
     credentials: true,
 }));
 
@@ -83,6 +104,7 @@ app.use('/api', globalLimiter);
 app.get('/api/health', (req, res) => {
     res.json({
         status: 'ok',
+        database: mongoose.connection.readyState === 1 ? 'Connected to MongoDB Atlas' : 'Disconnected / Connecting',
         timestamp: new Date(),
         uptime: process.uptime(),
         environment: process.env.NODE_ENV
