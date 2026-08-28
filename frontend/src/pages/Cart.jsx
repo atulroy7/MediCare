@@ -14,31 +14,55 @@ function readPrescriptionsForUser(userObj) {
     if (!userObj) return [];
     const cleanEmail = (userObj.email || '').toLowerCase();
     const map = new Map();
+
+    const addRxItem = (r) => {
+        if (!r || typeof r !== 'object') return;
+        const rxEmail = (r.userEmail || r.email || '').toLowerCase();
+        if (rxEmail && rxEmail !== cleanEmail) return;
+
+        const keyId = r.id || r.rxId || r._id;
+        if (!keyId) return;
+
+        const existing = map.get(keyId);
+        let status = r.status || (existing ? existing.status : 'PENDING_VERIFICATION');
+
+        if (existing && existing.status === 'APPROVED' && status !== 'APPROVED') {
+            status = 'APPROVED';
+        }
+
+        map.set(keyId, {
+            ...(existing || {}),
+            ...r,
+            id: keyId,
+            status
+        });
+    };
+
     try {
         const globalRx = JSON.parse(localStorage.getItem('jaya_all_prescriptions') || '[]');
         const emailRx = JSON.parse(localStorage.getItem(`jaya_prescriptions_${cleanEmail}`) || '[]');
         const idRx = userObj.id ? JSON.parse(localStorage.getItem(`jaya_prescriptions_${userObj.id}`) || '[]') : [];
-        // Also scan ALL jaya_prescriptions_* keys to catch any email/id mismatches
+
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
             if (key && key.startsWith('jaya_prescriptions_')) {
                 try {
                     const items = JSON.parse(localStorage.getItem(key) || '[]');
-                    if (Array.isArray(items)) {
-                        items.filter(r => r && r.userEmail && r.userEmail.toLowerCase() === cleanEmail)
-                            .forEach(r => { if (r.id) map.set(r.id, r); });
-                    }
+                    if (Array.isArray(items)) items.forEach(addRxItem);
                 } catch (_) {}
             }
         }
-        [...globalRx.filter(r => r && r.userEmail && r.userEmail.toLowerCase() === cleanEmail), ...emailRx, ...idRx]
-            .forEach(r => { if (r && r.id) map.set(r.id, r); });
+
+        if (Array.isArray(globalRx)) globalRx.forEach(addRxItem);
+        if (Array.isArray(emailRx)) emailRx.forEach(addRxItem);
+        if (Array.isArray(idRx)) idRx.forEach(addRxItem);
     } catch (_) {}
+
     try {
         const sessionRx = JSON.parse(sessionStorage.getItem('jaya_session_prescriptions') || '[]');
-        sessionRx.filter(r => r && r.userEmail && r.userEmail.toLowerCase() === cleanEmail)
-            .forEach(r => { if (r && r.id) { const ex = map.get(r.id); map.set(r.id, { ...ex, ...r }); } });
+        if (Array.isArray(sessionRx)) sessionRx.forEach(addRxItem);
     } catch (_) {}
+
     return Array.from(map.values());
 }
 
@@ -145,7 +169,7 @@ export default function Cart() {
         toast('Promo code removed.', { icon: '🗑️' });
     };
 
-    const handleCheckout = () => {
+    const handleCheckout = async () => {
         if (!isAuthenticated || !user) {
             toast.error('Please log in to complete your order.', { duration: 4000, icon: '🔒' });
             navigate('/login', { state: { from: '/cart' } });
@@ -155,12 +179,39 @@ export default function Cart() {
             toast.error('Your cart is empty.');
             return;
         }
-        // Re-read fresh from storage at click time — source of truth
-        const freshPrescriptions = readPrescriptionsForUser(user);
+
+        let freshPrescriptions = readPrescriptionsForUser(user);
+
+        // Fetch fresh real-time status from backend API as source of truth
+        try {
+            const backendUrl = getApiBaseUrl();
+            const res = await fetch(`${backendUrl}/prescriptions/my-prescriptions?email=${encodeURIComponent(user.email)}`);
+            const data = await res.json();
+            if (res.ok && data.success && Array.isArray(data.prescriptions) && data.prescriptions.length > 0) {
+                const cleanEmail = user.email.toLowerCase();
+                const key = `jaya_prescriptions_${cleanEmail}`;
+                const apiMapped = data.prescriptions.map(p => ({
+                    id: p.rxId || p._id || p.id,
+                    rxId: p.rxId || p._id || p.id,
+                    _id: p._id || p.rxId || p.id,
+                    status: p.status,
+                    patient: p.patientName || p.patient,
+                    userEmail: (p.userEmail || user.email).toLowerCase(),
+                    filename: p.filename,
+                    createdAt: p.createdAt
+                }));
+                localStorage.setItem(key, JSON.stringify(apiMapped));
+                freshPrescriptions = readPrescriptionsForUser(user);
+            }
+        } catch (err) {
+            console.warn('[Cart] Checkout API rx sync warning:', err.message);
+        }
+
         const freshApproved = freshPrescriptions.some(rx => rx.status === 'APPROVED');
         const freshPending = freshPrescriptions.some(rx => rx.status === 'PENDING_VERIFICATION');
         const freshRejected = freshPrescriptions.some(rx => rx.status === 'REJECTED');
         console.log('[Cart] Checkout attempt — prescriptions:', freshPrescriptions.map(p => `${p.id}=${p.status}`));
+
         if (!freshApproved) {
             if (freshPending) {
                 toast.error('🔒 Order Blocked: Prescription is PENDING agent review. Wait for agent approval.', { duration: 6000 });
