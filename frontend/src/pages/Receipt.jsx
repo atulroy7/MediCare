@@ -71,6 +71,34 @@ export default function Receipt() {
     const discount = order.discount || 0;
     const totalAmount = order.totalAmount || (subtotal + taxes + delivery - discount);
 
+    // Resolve full customer delivery address
+    const resolveDeliveryAddress = () => {
+        if (order.shippingAddress && order.shippingAddress !== 'Standard Delivery Address') {
+            return order.shippingAddress;
+        }
+        if (order.deliveryAddress) return order.deliveryAddress;
+        if (order.address) return order.address;
+
+        if (user) {
+            const cleanEmail = (user.email || '').toLowerCase();
+            try {
+                const emailRx = JSON.parse(localStorage.getItem(`jaya_prescriptions_${cleanEmail}`) || '[]');
+                const foundRx = emailRx.find(r => r && r.address && r.address.trim().length > 0);
+                if (foundRx && foundRx.address) return foundRx.address;
+
+                const globalRx = JSON.parse(localStorage.getItem('jaya_all_prescriptions') || '[]');
+                const foundGlobal = globalRx.find(r => r && r.userEmail && r.userEmail.toLowerCase() === cleanEmail && r.address);
+                if (foundGlobal && foundGlobal.address) return foundGlobal.address;
+            } catch (_) {}
+        }
+
+        return user?.address || '123 Health Park, New Delhi, India';
+    };
+
+    const deliveryAddress = resolveDeliveryAddress();
+    const customerName = order.customerName || user?.name || 'Customer';
+    const customerPhone = order.phone || user?.phone || 'N/A';
+
     return (
         <>
             <Seo title={`Receipt #${order.id} | MediCare`} description="Official order receipt and tax invoice." />
@@ -120,17 +148,25 @@ export default function Receipt() {
                         </div>
 
                         {/* Customer & Delivery Info */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-surface-hover border border-border rounded-2xl p-5">
-                            <div>
-                                <h4 className="text-[11px] font-extrabold uppercase text-text-muted tracking-wider mb-2">Billed To (Customer)</h4>
-                                <p className="font-bold text-sm text-text">{user?.name || 'Customer'}</p>
-                                <p className="text-xs text-text-muted mt-0.5">{user?.email || ''}</p>
-                                <p className="text-xs text-text-muted mt-0.5">Phone: {user?.phone || 'N/A'}</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-surface-hover border border-border rounded-2xl p-5 print:bg-white print:border-slate-300">
+                            <div className="space-y-1">
+                                <h4 className="text-[11px] font-extrabold uppercase text-text-muted tracking-wider mb-2 flex items-center gap-1.5">
+                                    <Icon name="User" className="w-3.5 h-3.5 text-primary" />
+                                    Billed To (Customer)
+                                </h4>
+                                <p className="font-bold text-sm text-text">{customerName}</p>
+                                <p className="text-xs text-text-muted mt-0.5">{order.userEmail || user?.email || ''}</p>
+                                <p className="text-xs text-text-muted mt-0.5">Phone: <span className="font-mono font-medium text-text">{customerPhone}</span></p>
                             </div>
 
-                            <div>
-                                <h4 className="text-[11px] font-extrabold uppercase text-text-muted tracking-wider mb-2">Delivery & Payment</h4>
-                                <p className="text-xs text-text leading-relaxed">{order.shippingAddress || user?.address || 'Standard Home Delivery'}</p>
+                            <div className="space-y-1">
+                                <h4 className="text-[11px] font-extrabold uppercase text-text-muted tracking-wider mb-2 flex items-center gap-1.5">
+                                    <Icon name="MapPin" className="w-3.5 h-3.5 text-secondary" />
+                                    Delivery Destination Address
+                                </h4>
+                                <p className="text-xs text-text font-medium leading-relaxed bg-bg/50 print:bg-transparent p-2.5 rounded-xl border border-border/50 print:border-none print:p-0">
+                                    {deliveryAddress}
+                                </p>
                                 <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-2 flex items-center gap-1">
                                     <Icon name="CheckCircle" className="w-3.5 h-3.5" />
                                     Prescription Verified by Licensed Pharmacist

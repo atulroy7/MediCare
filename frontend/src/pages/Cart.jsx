@@ -230,6 +230,13 @@ export default function Cart() {
     };
 
     const handlePaymentSuccess = (paymentDetails) => {
+        // Resolve delivery address from approved prescriptions or user profile
+        const userPrescriptions = readPrescriptionsForUser(user);
+        const latestRx = userPrescriptions.find(r => r.address && r.address.trim().length > 0) || userPrescriptions[0];
+        const shippingAddress = latestRx?.address || user?.address || '123 Health Park, New Delhi, India';
+        const customerName = latestRx?.patient || latestRx?.patientName || user?.name || 'Customer';
+        const phone = latestRx?.phone || user?.phone || '';
+
         // Save completed order to user account
         const newOrder = {
             id: 'ORD-' + Math.floor(10000 + Math.random() * 90000),
@@ -244,7 +251,10 @@ export default function Cart() {
             paymentMethod: paymentDetails.method,
             txnId: paymentDetails.txnId,
             items: items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })),
-            shippingAddress: user.address || 'Standard Delivery Address'
+            shippingAddress,
+            customerName,
+            phone,
+            userEmail: (user.email || '').toLowerCase()
         };
 
         const userOrderKey = `jaya_orders_${user.id || user.email}`;
