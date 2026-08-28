@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import express from 'express';
+import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -168,7 +169,7 @@ app.listen(PORT, () => {
     console.log('\n========================================');
     console.log(`🚀 Server running in ${process.env.NODE_ENV || 'development'} mode`);
     console.log(`📡 Listening on port ${PORT}`);
-    console.log(`🌐 Allowed origins: ${allowedOrigins.join(', ')}`);
+    console.log(`🌐 Allowed origins: ${explicitOrigins.length > 0 ? explicitOrigins.join(', ') : 'Vercel / Localhost permitted'}`);
     console.log('========================================\n');
 });
 
