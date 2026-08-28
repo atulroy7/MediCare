@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { getApiBaseUrl } from '../services/api';
 
 const AuthContext = createContext();
 
@@ -68,7 +69,7 @@ export function AuthProvider({ children }) {
 
         try {
             const cleanEmail = email.trim().toLowerCase();
-            const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+            const backendUrl = getApiBaseUrl();
 
             // Try backend API first
             try {
@@ -122,7 +123,7 @@ export function AuthProvider({ children }) {
         setLoading(true);
         try {
             const cleanEmail = userData.email.trim().toLowerCase();
-            const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+            const backendUrl = getApiBaseUrl();
 
             // Send registration request to backend
             try {

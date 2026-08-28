@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { getApiBaseUrl } from '../services/api';
 import Icon from '../components/Icons';
 import Seo from '../components/Seo';
 import CustomerDashboard from '../components/dashboard/CustomerDashboard';
@@ -46,7 +47,7 @@ export default function Dashboard() {
         if (!user) return;
 
         const cleanEmail = user.email.toLowerCase();
-        const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+        const backendUrl = getApiBaseUrl();
 
         if (role === 'customer') {
             const rxMap = new Map();

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import emailjs from '@emailjs/browser';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
+import { getApiBaseUrl } from '../services/api';
 import Icon from './Icons';
 
 const initialForm = {
@@ -126,7 +127,7 @@ export default function PrescriptionUpload() {
 
             // Send to Backend API to persist in MongoDB Atlas
             try {
-                const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+                const backendUrl = getApiBaseUrl();
                 await fetch(`${backendUrl}/prescriptions`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
