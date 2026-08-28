@@ -224,7 +224,7 @@ export default function Dashboard() {
 
         // 3. Call backend API
         try {
-            const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+            const backendUrl = getApiBaseUrl();
             await fetch(`${backendUrl}/prescriptions/${id}/status`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
@@ -273,7 +273,7 @@ export default function Dashboard() {
 
         // 3. Call backend API
         try {
-            const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+            const backendUrl = getApiBaseUrl();
             await fetch(`${backendUrl}/prescriptions/${id}/status`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },

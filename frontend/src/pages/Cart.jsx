@@ -6,6 +6,7 @@ import Icon from '../components/Icons';
 import PaymentGatewayModal from '../components/PaymentGatewayModal';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { getApiBaseUrl } from '../services/api';
 import toast from 'react-hot-toast';
 
 // Read all prescriptions for a user from ALL storage sources
@@ -52,12 +53,37 @@ export default function Cart() {
     // Prescription status as proper React STATE — refreshed on every sync event
     const [rxStatus, setRxStatus] = useState({ hasApproved: false, hasPending: false, hasRejected: false, loaded: false });
 
-    const refreshRxStatus = () => {
+    const refreshRxStatus = async () => {
         if (!user) {
             setRxStatus({ hasApproved: false, hasPending: false, hasRejected: false, loaded: true });
             return;
         }
-        const prescriptions = readPrescriptionsForUser(user);
+
+        let prescriptions = readPrescriptionsForUser(user);
+
+        // Fetch real-time prescriptions from backend API as source of truth
+        try {
+            const backendUrl = getApiBaseUrl();
+            const res = await fetch(`${backendUrl}/prescriptions/my-prescriptions?email=${encodeURIComponent(user.email)}`);
+            const data = await res.json();
+            if (res.ok && data.success && Array.isArray(data.prescriptions) && data.prescriptions.length > 0) {
+                const cleanEmail = user.email.toLowerCase();
+                const key = `jaya_prescriptions_${cleanEmail}`;
+                const apiMapped = data.prescriptions.map(p => ({
+                    id: p.rxId || p.id || p._id,
+                    status: p.status,
+                    patient: p.patientName,
+                    userEmail: p.userEmail,
+                    filename: p.filename,
+                    createdAt: p.createdAt
+                }));
+                localStorage.setItem(key, JSON.stringify(apiMapped));
+                prescriptions = readPrescriptionsForUser(user);
+            }
+        } catch (err) {
+            console.warn('[Cart] API rx status fetch warning:', err.message);
+        }
+
         console.log('[Cart] Prescriptions found:', prescriptions.map(p => `${p.id}=${p.status}`));
         setRxStatus({
             hasApproved: prescriptions.some(rx => rx.status === 'APPROVED'),

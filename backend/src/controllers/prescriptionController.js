@@ -188,8 +188,12 @@ export const updatePrescriptionStatus = asyncHandler(async (req, res) => {
 
     if (process.env.MONGO_URI) {
         try {
+            const filter = mongoose.Types.ObjectId.isValid(id)
+                ? { $or: [{ _id: id }, { rxId: id }] }
+                : { rxId: id };
+
             updated = await Prescription.findOneAndUpdate(
-                { $or: [{ _id: id }, { rxId: id }] },
+                filter,
                 { $set: { status, agentNotes: agentNotes || '' } },
                 { new: true }
             );
