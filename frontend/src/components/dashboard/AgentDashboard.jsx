@@ -79,13 +79,13 @@ export default function AgentDashboard({
                     </div>
 
                     {/* Filter Tabs */}
-                    <div className="flex items-center p-1 bg-surface-hover rounded-xl border border-border text-xs">
-                        {['ALL', 'PENDING_VERIFICATION', 'APPROVED', 'REJECTED'].map((filter) => (
+                    <div className="flex items-center p-1 bg-surface-hover rounded-xl border border-border text-xs overflow-x-auto">
+                        {['ALL', 'PENDING_VERIFICATION', 'APPROVED', 'FULFILLED', 'REJECTED'].map((filter) => (
                             <button
                                 key={filter}
                                 type="button"
                                 onClick={() => setAgentFilter(filter)}
-                                className={`px-3 py-1.5 rounded-lg font-bold transition-all text-[11px] uppercase tracking-wider ${
+                                className={`px-3 py-1.5 rounded-lg font-bold transition-all text-[11px] uppercase tracking-wider whitespace-nowrap ${
                                     agentFilter === filter
                                         ? 'bg-primary text-white shadow-sm'
                                         : 'text-text-muted hover:text-text'
@@ -121,12 +121,14 @@ export default function AgentDashboard({
                                                 className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
                                                     item.status === 'APPROVED'
                                                         ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
+                                                        : item.status === 'FULFILLED'
+                                                        ? 'bg-blue-500/10 text-blue-600 border border-blue-500/20'
                                                         : item.status === 'REJECTED'
                                                         ? 'bg-red-500/10 text-red-600 border border-red-500/20'
                                                         : 'bg-amber-500/10 text-amber-600 border border-amber-500/20'
                                                 }`}
                                             >
-                                                {item.status.replace('_', ' ')}
+                                                {item.status ? item.status.replace('_', ' ') : 'PENDING'}
                                             </span>
                                             <span className="text-xs text-text-muted">• Uploaded {item.date}</span>
                                         </div>

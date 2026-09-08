@@ -12,7 +12,7 @@ const prescriptionSchema = new mongoose.Schema({
     photoUrl: { type: String, default: '' }, // DataURL or Cloudinary URL
     status: { 
         type: String, 
-        enum: ['PENDING_VERIFICATION', 'APPROVED', 'REJECTED'], 
+        enum: ['PENDING_VERIFICATION', 'APPROVED', 'REJECTED', 'FULFILLED'], 
         default: 'PENDING_VERIFICATION' 
     },
     doctor: { type: String, default: 'Dr. Verified Practitioner' },

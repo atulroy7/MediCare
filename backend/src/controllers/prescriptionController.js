@@ -180,7 +180,7 @@ export const updatePrescriptionStatus = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { status, agentNotes } = req.body;
 
-    if (!['APPROVED', 'REJECTED', 'PENDING_VERIFICATION'].includes(status)) {
+    if (!['APPROVED', 'REJECTED', 'PENDING_VERIFICATION', 'FULFILLED'].includes(status)) {
         throw Errors.badRequest('Invalid prescription status.');
     }
 

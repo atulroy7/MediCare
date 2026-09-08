@@ -9,26 +9,24 @@ import { useAuth } from '../context/AuthContext';
 import { getApiBaseUrl } from '../services/api';
 import toast from 'react-hot-toast';
 
-// Read all prescriptions for a user from ALL storage sources
-function readPrescriptionsForUser(userObj) {
+// Read all prescriptions for a user from storage sources strictly scoped to the user
+export function readPrescriptionsForUser(userObj) {
     if (!userObj) return [];
-    const cleanEmail = (userObj.email || '').toLowerCase();
+    const cleanEmail = (userObj.email || '').toLowerCase().trim();
+    if (!cleanEmail) return [];
     const map = new Map();
 
     const addRxItem = (r) => {
         if (!r || typeof r !== 'object') return;
-        const rxEmail = (r.userEmail || r.email || '').toLowerCase();
-        if (rxEmail && rxEmail !== cleanEmail) return;
+        const rxEmail = (r.userEmail || r.email || '').toLowerCase().trim();
+        // Strict isolation: must match current user's email
+        if (rxEmail !== cleanEmail) return;
 
         const keyId = r.id || r.rxId || r._id;
         if (!keyId) return;
 
         const existing = map.get(keyId);
-        let status = r.status || (existing ? existing.status : 'PENDING_VERIFICATION');
-
-        if (existing && existing.status === 'APPROVED' && status !== 'APPROVED') {
-            status = 'APPROVED';
-        }
+        const status = r.status || (existing ? existing.status : 'PENDING_VERIFICATION');
 
         map.set(keyId, {
             ...(existing || {}),
@@ -39,23 +37,11 @@ function readPrescriptionsForUser(userObj) {
     };
 
     try {
-        const globalRx = JSON.parse(localStorage.getItem('jaya_all_prescriptions') || '[]');
         const emailRx = JSON.parse(localStorage.getItem(`jaya_prescriptions_${cleanEmail}`) || '[]');
-        const idRx = userObj.id ? JSON.parse(localStorage.getItem(`jaya_prescriptions_${userObj.id}`) || '[]') : [];
+        const globalRx = JSON.parse(localStorage.getItem('jaya_all_prescriptions') || '[]');
 
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && key.startsWith('jaya_prescriptions_')) {
-                try {
-                    const items = JSON.parse(localStorage.getItem(key) || '[]');
-                    if (Array.isArray(items)) items.forEach(addRxItem);
-                } catch (_) {}
-            }
-        }
-
-        if (Array.isArray(globalRx)) globalRx.forEach(addRxItem);
         if (Array.isArray(emailRx)) emailRx.forEach(addRxItem);
-        if (Array.isArray(idRx)) idRx.forEach(addRxItem);
+        if (Array.isArray(globalRx)) globalRx.forEach(addRxItem);
     } catch (_) {}
 
     try {
@@ -63,7 +49,12 @@ function readPrescriptionsForUser(userObj) {
         if (Array.isArray(sessionRx)) sessionRx.forEach(addRxItem);
     } catch (_) {}
 
-    return Array.from(map.values());
+    return Array.from(map.values()).sort((a, b) => {
+        const tA = a.timestamp || (a.createdAt ? new Date(a.createdAt).getTime() : 0);
+        const tB = b.timestamp || (b.createdAt ? new Date(b.createdAt).getTime() : 0);
+        if (tA && tB && tA !== tB) return tB - tA;
+        return (b.id || '').localeCompare(a.id || '');
+    });
 }
 
 export default function Cart() {
@@ -83,22 +74,26 @@ export default function Cart() {
             return;
         }
 
+        const cleanEmail = (user.email || '').toLowerCase().trim();
         let prescriptions = readPrescriptionsForUser(user);
 
         // Fetch real-time prescriptions from backend API as source of truth
         try {
             const backendUrl = getApiBaseUrl();
-            const res = await fetch(`${backendUrl}/prescriptions/my-prescriptions?email=${encodeURIComponent(user.email)}`);
+            const res = await fetch(`${backendUrl}/prescriptions/my-prescriptions?email=${encodeURIComponent(cleanEmail)}`);
             const data = await res.json();
             if (res.ok && data.success && Array.isArray(data.prescriptions) && data.prescriptions.length > 0) {
-                const cleanEmail = user.email.toLowerCase();
                 const key = `jaya_prescriptions_${cleanEmail}`;
                 const apiMapped = data.prescriptions.map(p => ({
                     id: p.rxId || p.id || p._id,
+                    rxId: p.rxId || p.id || p._id,
                     status: p.status,
-                    patient: p.patientName,
-                    userEmail: p.userEmail,
+                    patient: p.patientName || p.patient,
+                    userEmail: (p.userEmail || cleanEmail).toLowerCase().trim(),
                     filename: p.filename,
+                    doctor: p.doctor,
+                    address: p.address,
+                    phone: p.phone,
                     createdAt: p.createdAt
                 }));
                 localStorage.setItem(key, JSON.stringify(apiMapped));
@@ -108,11 +103,20 @@ export default function Cart() {
             console.warn('[Cart] API rx status fetch warning:', err.message);
         }
 
-        console.log('[Cart] Prescriptions found:', prescriptions.map(p => `${p.id}=${p.status}`));
+        console.log('[Cart] Prescriptions found for user:', prescriptions.map(p => `${p.id}=${p.status}`));
+
+        // Active unfulfilled prescription dictates current eligibility
+        const activeRx = prescriptions.find(rx => rx.status !== 'FULFILLED') || prescriptions[0];
+        const hasApproved = Boolean(activeRx && activeRx.status === 'APPROVED');
+        const hasPending = Boolean(activeRx && activeRx.status === 'PENDING_VERIFICATION');
+        const hasRejected = Boolean(activeRx && activeRx.status === 'REJECTED');
+
         setRxStatus({
-            hasApproved: prescriptions.some(rx => rx.status === 'APPROVED'),
-            hasPending: prescriptions.some(rx => rx.status === 'PENDING_VERIFICATION'),
-            hasRejected: prescriptions.some(rx => rx.status === 'REJECTED'),
+            hasApproved,
+            hasPending,
+            hasRejected,
+            activeRx,
+            prescriptionsCount: prescriptions.length,
             loaded: true,
         });
     };
@@ -180,15 +184,15 @@ export default function Cart() {
             return;
         }
 
+        const cleanEmail = (user.email || '').toLowerCase().trim();
         let freshPrescriptions = readPrescriptionsForUser(user);
 
         // Fetch fresh real-time status from backend API as source of truth
         try {
             const backendUrl = getApiBaseUrl();
-            const res = await fetch(`${backendUrl}/prescriptions/my-prescriptions?email=${encodeURIComponent(user.email)}`);
+            const res = await fetch(`${backendUrl}/prescriptions/my-prescriptions?email=${encodeURIComponent(cleanEmail)}`);
             const data = await res.json();
             if (res.ok && data.success && Array.isArray(data.prescriptions) && data.prescriptions.length > 0) {
-                const cleanEmail = user.email.toLowerCase();
                 const key = `jaya_prescriptions_${cleanEmail}`;
                 const apiMapped = data.prescriptions.map(p => ({
                     id: p.rxId || p._id || p.id,
@@ -196,8 +200,11 @@ export default function Cart() {
                     _id: p._id || p.rxId || p.id,
                     status: p.status,
                     patient: p.patientName || p.patient,
-                    userEmail: (p.userEmail || user.email).toLowerCase(),
+                    userEmail: (p.userEmail || cleanEmail).toLowerCase().trim(),
                     filename: p.filename,
+                    doctor: p.doctor,
+                    address: p.address,
+                    phone: p.phone,
                     createdAt: p.createdAt
                 }));
                 localStorage.setItem(key, JSON.stringify(apiMapped));
@@ -207,22 +214,21 @@ export default function Cart() {
             console.warn('[Cart] Checkout API rx sync warning:', err.message);
         }
 
-        const freshApproved = freshPrescriptions.some(rx => rx.status === 'APPROVED');
-        const freshPending = freshPrescriptions.some(rx => rx.status === 'PENDING_VERIFICATION');
-        const freshRejected = freshPrescriptions.some(rx => rx.status === 'REJECTED');
-        console.log('[Cart] Checkout attempt — prescriptions:', freshPrescriptions.map(p => `${p.id}=${p.status}`));
+        const activeRx = freshPrescriptions.find(rx => rx.status !== 'FULFILLED') || freshPrescriptions[0];
+        const isApproved = Boolean(activeRx && activeRx.status === 'APPROVED');
+        console.log('[Cart] Checkout attempt — active rx:', activeRx ? `${activeRx.id}=${activeRx.status}` : 'None');
 
-        if (!freshApproved) {
-            if (freshPending) {
-                toast.error('🔒 Order Blocked: Prescription is PENDING agent review. Wait for agent approval.', { duration: 6000 });
+        if (!isApproved) {
+            if (activeRx && activeRx.status === 'PENDING_VERIFICATION') {
+                toast.error('🔒 Order Blocked: Prescription is PENDING agent review. Wait for Medical Agent approval.', { duration: 6000 });
                 return;
             }
-            if (freshRejected) {
+            if (activeRx && activeRx.status === 'REJECTED') {
                 toast.error('🔒 Order Blocked: Prescription was REJECTED. Upload a new valid prescription.', { duration: 6000 });
                 navigate('/prescription');
                 return;
             }
-            toast.error('🔒 Order Blocked: Upload a prescription and get Medical Agent approval first!', { duration: 6000 });
+            toast.error('🔒 Order Blocked: Upload a doctor prescription and get Medical Agent approval first!', { duration: 6000 });
             navigate('/prescription');
             return;
         }
@@ -230,12 +236,12 @@ export default function Cart() {
     };
 
     const handlePaymentSuccess = (paymentDetails) => {
-        // Resolve delivery address from approved prescriptions or user profile
+        const cleanEmail = (user.email || '').toLowerCase().trim();
         const userPrescriptions = readPrescriptionsForUser(user);
-        const latestRx = userPrescriptions.find(r => r.address && r.address.trim().length > 0) || userPrescriptions[0];
-        const shippingAddress = latestRx?.address || user?.address || '123 Health Park, New Delhi, India';
-        const customerName = latestRx?.patient || latestRx?.patientName || user?.name || 'Customer';
-        const phone = latestRx?.phone || user?.phone || '';
+        const approvedRx = userPrescriptions.find(r => r.status === 'APPROVED');
+        const shippingAddress = approvedRx?.address || user?.address || '123 Health Park, New Delhi, India';
+        const customerName = approvedRx?.patient || approvedRx?.patientName || user?.name || 'Customer';
+        const phone = approvedRx?.phone || user?.phone || '';
 
         // Save completed order to user account
         const newOrder = {
@@ -254,12 +260,52 @@ export default function Cart() {
             shippingAddress,
             customerName,
             phone,
-            userEmail: (user.email || '').toLowerCase()
+            userEmail: cleanEmail,
+            prescriptionId: approvedRx?.id || null
         };
 
-        const userOrderKey = `jaya_orders_${user.id || user.email}`;
+        const userOrderKey = `jaya_orders_${user.id || cleanEmail}`;
         const existingOrders = JSON.parse(localStorage.getItem(userOrderKey) || '[]');
         localStorage.setItem(userOrderKey, JSON.stringify([newOrder, ...existingOrders]));
+
+        // Fulfill / consume the approved prescription so future orders require a new prescription approval
+        if (approvedRx && approvedRx.id) {
+            const rxId = approvedRx.id;
+            try {
+                // 1. Update email storage
+                const emailKey = `jaya_prescriptions_${cleanEmail}`;
+                const currentEmailRx = JSON.parse(localStorage.getItem(emailKey) || '[]');
+                const updatedEmailRx = currentEmailRx.map(p => 
+                    (p.id === rxId || p.rxId === rxId || p._id === rxId) ? { ...p, status: 'FULFILLED', usedInOrder: newOrder.id } : p
+                );
+                localStorage.setItem(emailKey, JSON.stringify(updatedEmailRx));
+
+                // 2. Update global list
+                const currentAllRx = JSON.parse(localStorage.getItem('jaya_all_prescriptions') || '[]');
+                const updatedAllRx = currentAllRx.map(p => 
+                    (p.id === rxId || p.rxId === rxId || p._id === rxId) ? { ...p, status: 'FULFILLED', usedInOrder: newOrder.id } : p
+                );
+                localStorage.setItem('jaya_all_prescriptions', JSON.stringify(updatedAllRx));
+
+                // 3. Update session storage
+                const sessionRx = JSON.parse(sessionStorage.getItem('jaya_session_prescriptions') || '[]');
+                const updatedSession = sessionRx.map(p => 
+                    (p.id === rxId || p.rxId === rxId || p._id === rxId) ? { ...p, status: 'FULFILLED', usedInOrder: newOrder.id } : p
+                );
+                sessionStorage.setItem('jaya_session_prescriptions', JSON.stringify(updatedSession));
+
+                // 4. Update backend API
+                const backendUrl = getApiBaseUrl();
+                fetch(`${backendUrl}/prescriptions/${rxId}/status`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'FULFILLED' })
+                }).catch(() => {});
+            } catch (_) {}
+
+            window.dispatchEvent(new Event('jaya_prescription_update'));
+            window.dispatchEvent(new Event('storage'));
+        }
 
         clearCart();
         setIsPaymentOpen(false);

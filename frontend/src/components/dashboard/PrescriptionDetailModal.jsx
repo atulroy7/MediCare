@@ -24,6 +24,8 @@ export default function PrescriptionDetailModal({ selectedRx, onClose, onApprove
                                 <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
                                     selectedRx.status === 'APPROVED' 
                                         ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' 
+                                        : selectedRx.status === 'FULFILLED'
+                                        ? 'bg-blue-500/10 text-blue-600 border border-blue-500/20'
                                         : selectedRx.status === 'REJECTED' 
                                         ? 'bg-red-500/10 text-red-600 border border-red-500/20' 
                                         : 'bg-amber-500/10 text-amber-600 border border-amber-500/20'

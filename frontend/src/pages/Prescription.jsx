@@ -36,6 +36,7 @@ const stepVariants = {
 
 const statusConfig = {
     APPROVED: { label: 'Approved', cls: 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' },
+    FULFILLED: { label: 'Fulfilled (Ordered)', cls: 'bg-blue-500/10 text-blue-600 border border-blue-500/20' },
     REJECTED: { label: 'Rejected', cls: 'bg-red-500/10 text-red-600 border border-red-500/20' },
     PENDING_VERIFICATION: { label: 'Pending Review', cls: 'bg-amber-500/10 text-amber-600 border border-amber-500/20' },
 };

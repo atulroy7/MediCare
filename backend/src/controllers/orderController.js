@@ -1,5 +1,6 @@
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
+import Prescription from '../models/Prescription.js';
 import { getRazorpayInstance } from '../config/razorpay.js';
 import { asyncHandler, Errors } from '../utils/errors.js';
 import crypto from 'crypto';
@@ -32,6 +33,18 @@ const sendTelegramNotification = async (message) => {
 export const createOrder = asyncHandler(async (req, res) => {
     const { items, user_name, user_phone, shipping_address, prescription_url } = req.body;
     const user_id = req.user.uid;
+    const user_email = (req.user.email || '').toLowerCase().trim();
+
+    // Verify Medical Agent prescription approval
+    if (process.env.MONGO_URI && user_email) {
+        const approvedRx = await Prescription.findOne({
+            userEmail: user_email,
+            status: 'APPROVED'
+        });
+        if (!approvedRx) {
+            throw Errors.forbidden('Order blocked: A Medical Agent-approved prescription is required to place an order.');
+        }
+    }
 
     if (!items || items.length === 0) {
         throw Errors.badRequest('Order items cannot be empty');
