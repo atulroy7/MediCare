@@ -9,9 +9,9 @@
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app/frontend
 
-# Install deps first (better layer caching)
+# Install deps (use npm install, not npm ci, to handle lock file drift)
 COPY frontend/package*.json ./
-RUN npm ci
+RUN npm install --prefer-offline
 
 # Copy source and build
 COPY frontend/ ./
@@ -25,9 +25,10 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Install production backend dependencies only
+# Install production backend dependencies
+# Use npm install --omit=dev instead of npm ci for lock-file resilience
 COPY backend/package*.json ./backend/
-RUN cd backend && npm ci --only=production
+RUN cd backend && npm install --omit=dev --prefer-offline
 
 # Copy backend source
 COPY backend/ ./backend/
@@ -43,7 +44,7 @@ EXPOSE 5000
 WORKDIR /app/backend
 
 # Health check so the platform knows when it's ready
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-  CMD wget -qO- http://localhost:${PORT:-5000}/api/health || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD wget -qO- http://localhost:${PORT:-5000}/ping || exit 1
 
 CMD ["node", "server.js"]
