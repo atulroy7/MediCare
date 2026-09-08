@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import emailjs from '@emailjs/browser';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 import { getApiBaseUrl } from '../services/api';
 import Icon from './Icons';
 
@@ -20,7 +21,9 @@ const emailConfigured =
 
 export default function PrescriptionUpload() {
     const { user, isAuthenticated } = useAuth();
+    const { items: cartItems } = useCart();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const [form, setForm] = useState(() => ({
         ...initialForm,
@@ -28,6 +31,17 @@ export default function PrescriptionUpload() {
         phone: user?.phone || '',
         address: user?.address || ''
     }));
+
+    const [requestedMedicines, setRequestedMedicines] = useState('');
+
+    useEffect(() => {
+        if (location.state?.cartMedicines) {
+            setRequestedMedicines(location.state.cartMedicines);
+        } else if (cartItems && cartItems.length > 0) {
+            setRequestedMedicines(cartItems.map(i => `${i.name} (x${i.quantity})`).join(', '));
+        }
+    }, [location.state, cartItems]);
+
     const [file, setFile] = useState(null);
     const [dragActive, setDragActive] = useState(false);
     const [sending, setSending] = useState(false);
@@ -70,7 +84,7 @@ export default function PrescriptionUpload() {
         }
 
         // CRITICAL: define cleanEmail once here — used throughout handleSubmit
-        const cleanEmail = (user.email || '').toLowerCase();
+        const cleanEmail = (user.email || '').toLowerCase().trim();
 
         setSending(true);
         try {
@@ -95,15 +109,12 @@ export default function PrescriptionUpload() {
                 );
             }
 
-            // Get current cart items & compute unique cart signature
-            const userCartKey = `jaya-medical-cart-${user.id || user.email}`;
-            const cartItemsRaw = JSON.parse(localStorage.getItem(userCartKey) || '[]');
-            const cartSignature = cartItemsRaw.length > 0 
-                ? cartItemsRaw.map(i => `${i.id}:${i.quantity}`).sort().join('|')
-                : 'general_prescription';
-            const medicinesSummary = cartItemsRaw.length > 0
-                ? cartItemsRaw.map(i => `${i.name} (x${i.quantity})`).join(', ')
-                : 'General Prescription Upload';
+            // Determine medicines to be verified by doctor
+            const medicinesSummary = requestedMedicines.trim() || (
+                cartItems && cartItems.length > 0
+                    ? cartItems.map(i => `${i.name} (x${i.quantity})`).join(', ')
+                    : 'General Medical Prescription'
+            );
 
             // Save to LocalStorage for User Account & Pharmacist Verification Queue
             const rxItem = {
@@ -119,9 +130,8 @@ export default function PrescriptionUpload() {
                 status: 'PENDING_VERIFICATION',
                 filename: file.name,
                 photoUrl: photoUrlData,
-                userEmail: user.email.toLowerCase(),
+                userEmail: cleanEmail,
                 userId: user.id || '',
-                cartSignature,
                 medicinesSummary
             };
 
@@ -140,7 +150,7 @@ export default function PrescriptionUpload() {
                         notes: form.notes || '',
                         filename: file.name,
                         photoUrl: photoUrlData,
-                        userEmail: user.email.toLowerCase(),
+                        userEmail: cleanEmail,
                         userId: user.id || user._id,
                         medicinesSummary
                     })
@@ -372,6 +382,29 @@ export default function PrescriptionUpload() {
                         className={inputBaseClass + ' resize-none'}
                     />
                 </label>
+
+                {/* Requested Medicines for Doctor Verification */}
+                <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-1.5">
+                            <Icon name="ShieldCheck" className="w-4 h-4" />
+                            Medicines for Doctor Verification
+                        </span>
+                        <span className="text-[10px] bg-primary/10 text-primary px-2.5 py-0.5 rounded-full font-bold border border-primary/20">
+                            Prescription Bound
+                        </span>
+                    </div>
+                    <input
+                        name="requested_medicines"
+                        value={requestedMedicines}
+                        onChange={(e) => setRequestedMedicines(e.target.value)}
+                        placeholder="e.g. Paracetamol 650mg, Amoxicillin 500mg, Atorvastatin 10mg"
+                        className={inputBaseClass}
+                    />
+                    <p className="text-[11px] text-text-muted leading-relaxed">
+                        The doctor/pharmacist will verify that the uploaded prescription document authorizes these specific medicines before unlocking your order placement.
+                    </p>
+                </div>
 
                 {/* Notes */}
                 <label className="block space-y-2">

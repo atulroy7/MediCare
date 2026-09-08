@@ -561,44 +561,57 @@ export default function Cart() {
                                 {/* Prescription Approval Status Banner — driven by React state, always fresh */}
                                 {isAuthenticated && rxStatus.loaded && (
                                     rxStatus.hasApproved ? (
-                                        <div className="p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs flex items-center gap-2">
-                                            <Icon name="CheckCircle" className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                                            <span className="font-bold">Medical Agent Clearance Verified &amp; Approved ✓ — You can place your order!</span>
+                                        <div className="p-4 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs space-y-1.5">
+                                            <div className="flex items-center gap-2">
+                                                <Icon name="CheckCircle" className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                                                <span className="font-bold text-sm">Doctor Prescription Verified &amp; Cleared ✓</span>
+                                            </div>
+                                            <p className="leading-relaxed opacity-95">
+                                                Clearance verified for: <span className="font-semibold text-text font-mono">{items.map(i => `${i.name} (x${i.quantity})`).join(', ')}</span>. You can place your order now!
+                                            </p>
                                         </div>
                                     ) : rxStatus.hasPending ? (
-                                        <div className="p-4 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs space-y-1">
+                                        <div className="p-4 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs space-y-1.5">
                                             <p className="font-bold flex items-center gap-1.5 text-sm">
                                                 <Icon name="Clock" className="w-4 h-4 text-amber-500" />
-                                                Prescription Awaiting Agent Approval
+                                                Prescription Awaiting Doctor / Agent Review
                                             </p>
                                             <p className="leading-relaxed opacity-90">
-                                                Your prescription is under review by a Medical Agent. Order placement will unlock automatically once approved.
+                                                Your uploaded prescription is under review for: <span className="font-semibold text-text font-mono">{items.map(i => `${i.name} (x${i.quantity})`).join(', ')}</span>. Order placement will unlock automatically once verified.
                                             </p>
                                         </div>
                                     ) : rxStatus.hasRejected ? (
-                                        <div className="p-4 rounded-2xl bg-red-500/15 border border-red-500/30 text-red-700 dark:text-red-300 text-xs space-y-1">
+                                        <div className="p-4 rounded-2xl bg-red-500/15 border border-red-500/30 text-red-700 dark:text-red-300 text-xs space-y-1.5">
                                             <p className="font-bold flex items-center gap-1.5 text-sm">
                                                 <Icon name="XCircle" className="w-4 h-4 text-red-500" />
                                                 Prescription REJECTED by Medical Agent
                                             </p>
                                             <p className="leading-relaxed opacity-90">
-                                                Your prescription was rejected. Please upload a new valid prescription.
+                                                Your prescription was rejected. Please upload a valid doctor prescription authorizing: <span className="font-semibold text-text font-mono">{items.map(i => `${i.name} (x${i.quantity})`).join(', ')}</span>.
                                             </p>
-                                            <Link to="/prescription" className="inline-block mt-2 font-bold text-red-600 dark:text-red-400 underline">
+                                            <Link 
+                                                to="/prescription" 
+                                                state={{ cartMedicines: items.map(i => `${i.name} (x${i.quantity})`).join(', ') }}
+                                                className="inline-flex items-center gap-1.5 mt-1 font-bold text-red-600 dark:text-red-400 underline"
+                                            >
                                                 Upload New Prescription →
                                             </Link>
                                         </div>
                                     ) : (
-                                        <div className="p-4 rounded-2xl bg-primary/10 border border-primary/20 text-primary text-xs space-y-1">
+                                        <div className="p-4 rounded-2xl bg-primary/10 border border-primary/20 text-primary text-xs space-y-2">
                                             <p className="font-bold flex items-center gap-1.5 text-sm">
                                                 <Icon name="FileText" className="w-4 h-4" />
-                                                Medical Agent Approval Required
+                                                Doctor Prescription Verification Required
                                             </p>
                                             <p className="leading-relaxed text-text-muted">
-                                                Upload a doctor prescription and get Medical Agent clearance before placing any order.
+                                                Under Indian drug regulations, a doctor prescription is mandatory to order: <span className="font-semibold text-text font-mono">{items.map(i => `${i.name} (x${i.quantity})`).join(', ')}</span>. Upload your prescription for doctor clearance.
                                             </p>
-                                            <Link to="/prescription" className="inline-block mt-1 font-bold text-primary underline">
-                                                Upload Prescription →
+                                            <Link 
+                                                to="/prescription" 
+                                                state={{ cartMedicines: items.map(i => `${i.name} (x${i.quantity})`).join(', ') }}
+                                                className="inline-flex items-center gap-1.5 font-bold text-primary hover:underline bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 transition-all hover:bg-primary/20"
+                                            >
+                                                Upload Prescription for these items →
                                             </Link>
                                         </div>
                                     )

@@ -137,6 +137,25 @@ export default function PrescriptionDetailModal({ selectedRx, onClose, onApprove
                                 </div>
                             </div>
 
+                            {/* Medicines Under Doctor Verification */}
+                            <div className="bg-primary/10 border border-primary/30 rounded-2xl p-4 space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <h4 className="text-xs font-extrabold uppercase text-primary tracking-wider flex items-center gap-1.5">
+                                        <Icon name="Stethoscope" className="w-4 h-4" />
+                                        Medicines Under Doctor Verification
+                                    </h4>
+                                    <span className="text-[10px] font-bold font-mono bg-primary/20 text-primary px-2.5 py-0.5 rounded-full">
+                                        Clinical Verification
+                                    </span>
+                                </div>
+                                <div className="bg-surface p-3 rounded-xl border border-border font-mono text-xs text-text font-bold leading-relaxed">
+                                    {selectedRx.medicinesSummary || 'General Medical Prescription'}
+                                </div>
+                                <p className="text-[11px] text-text-muted leading-relaxed">
+                                    Cross-check the uploaded prescription file against the requested medicines above before approving order placement.
+                                </p>
+                            </div>
+
                             {/* Customer Notes */}
                             <div className="bg-surface-hover border border-border rounded-2xl p-4 space-y-1">
                                 <h4 className="text-xs font-extrabold uppercase text-text-muted tracking-wider">Patient / Doctor Notes</h4>
