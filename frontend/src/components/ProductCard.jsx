@@ -17,7 +17,7 @@ export default function ProductCard({ product }) {
         // Fallback to SVG data URI if image fails
         e.target.onerror = null;
         e.target.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
-            `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"><rect width="400" height="400" fill="#f1f5f9"/><text x="200" y="190" font-family="sans-serif" font-size="20" font-weight="bold" fill="#0d9488" text-anchor="middle">${product.name}</text><text x="200" y="220" font-family="sans-serif" font-size="14" fill="#64748b" text-anchor="middle">${product.brand}</text></svg>`
+            `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"><rect width="400" height="400" fill="#f0ece6"/><text x="200" y="190" font-family="sans-serif" font-size="20" font-weight="bold" fill="#6B8F71" text-anchor="middle">${product.name}</text><text x="200" y="220" font-family="sans-serif" font-size="14" fill="#6B645C" text-anchor="middle">${product.brand}</text></svg>`
         )}`;
     };
 
@@ -27,7 +27,7 @@ export default function ProductCard({ product }) {
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
             className="h-full"
         >
-            <div className="glass-card group flex flex-col h-full overflow-hidden transition-all duration-300 hover:shadow-2xl hover:border-primary/30 dark:hover:border-primary/50">
+            <div className="glass-card group flex flex-col h-full overflow-hidden transition-all duration-300 hover:shadow-xl hover:border-primary/20 dark:hover:border-primary/30">
                 <Link to={`/products/${product.id}`} className="flex flex-col flex-grow">
                     {/* Image Section */}
                     <div className="relative overflow-hidden bg-bg-subtle aspect-square sm:aspect-[4/3] flex-shrink-0">

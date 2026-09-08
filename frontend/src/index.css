@@ -6,53 +6,53 @@
 
 @layer base {
   :root {
-    /* ─── Light Mode: #E8F4F8 (Light Blue Background) & #2E86C1 (Primary Navy) ─── */
-    --color-bg: 232 244 248; /* #E8F4F8 - User requested Light Blue Canvas */
-    --color-bg-subtle: 220 237 243; /* #DCEDF3 */
-    --color-text: 15 23 42; /* #0f172a - Slate 900 */
-    --color-text-muted: 71 85 105; /* #475569 - Slate 600 */
+    /* ─── Light Mode: Warm Neutral — Off-white Canvas & Sage Green Primary ─── */
+    --color-bg: 248 246 243; /* #F8F6F3 - Warm Off-White Canvas */
+    --color-bg-subtle: 240 236 230; /* #F0ECE6 - Warm Stone Subtle */
+    --color-text: 28 28 30; /* #1C1C1E - Soft Charcoal Text */
+    --color-text-muted: 107 100 92; /* #6B645C - Warm Muted Text */
     
-    --color-primary: 46 134 193; /* #2E86C1 - User requested Primary Navy */
-    --color-primary-light: 93 173 226; /* #5DADE2 - Sky Navy */
-    --color-primary-dark: 27 79 114; /* #1B4F72 - Deep Navy */
+    --color-primary: 107 143 113; /* #6B8F71 - Muted Sage Green */
+    --color-primary-light: 127 168 134; /* #7FA886 - Light Sage */
+    --color-primary-dark: 75 107 80; /* #4B6B50 - Deep Forest */
     
-    --color-secondary: 231 76 60; /* #E74C3C - Coral Red Accent */
+    --color-secondary: 196 149 106; /* #C4956A - Warm Terracotta */
     
-    --color-surface: 255 255 255;
-    --color-border: 204 225 234; /* #CCE1EA */
+    --color-surface: 254 253 251; /* #FEFDFB - Warm Cream Surface */
+    --color-border: 232 228 223; /* #E8E4DF - Warm Stone Border */
     
-    --glass-border: rgba(46, 134, 193, 0.2);
-    --glass-bg: rgba(255, 255, 255, 0.92);
-    --glass-shadow: 0 12px 32px -8px rgba(46, 134, 193, 0.12);
+    --glass-border: rgba(107, 143, 113, 0.15);
+    --glass-bg: rgba(254, 253, 251, 0.92);
+    --glass-shadow: 0 12px 32px -8px rgba(28, 28, 30, 0.08);
 
-    --lofi-gradient-1: #d4eaf2; /* Soft Ice Navy Tint */
-    --lofi-gradient-2: #e0f2fe; /* Light Cyan Blue */
-    --lofi-gradient-3: #e8f4f8;
+    --lofi-gradient-1: #f0ece6; /* Warm Stone */
+    --lofi-gradient-2: #f5f2ed; /* Light Linen */
+    --lofi-gradient-3: #f8f6f3;
   }
 
   .dark {
-    /* ─── Dark Mode: Pure Obsidian True Pitch Black (#000000 / #09090B) ─── */
-    --color-bg: 0 0 0; /* #000000 - True OLED Pitch Black */
-    --color-bg-subtle: 14 14 17; /* #0E0E11 - Deep Charcoal Black */
-    --color-text: 255 255 255; /* #FFFFFF - Pure Crisp White Text */
-    --color-text-muted: 161 161 170; /* #A1A1AA - Crisp Muted Text */
+    /* ─── Dark Mode: Charcoal — Rich Dark with Sage Green Accents ─── */
+    --color-bg: 26 26 30; /* #1A1A1E - Charcoal */
+    --color-bg-subtle: 34 34 39; /* #222227 - Deep Charcoal */
+    --color-text: 245 243 239; /* #F5F3EF - Warm White Text */
+    --color-text-muted: 156 150 142; /* #9C968E - Muted Warm Gray */
     
-    --color-primary: 56 189 248; /* #38BDF8 - Electric Blue Glow */
-    --color-primary-light: 125 211 252; /* #7DD3FC */
-    --color-primary-dark: 2 132 199; /* #0284C7 */
+    --color-primary: 127 168 134; /* #7FA886 - Soft Sage Glow */
+    --color-primary-light: 152 192 158; /* #98C09E */
+    --color-primary-dark: 92 130 98; /* #5C8262 */
     
-    --color-secondary: 244 63 94; /* #F43F5E - Vivid Accent */
+    --color-secondary: 210 168 134; /* #D2A886 - Soft Terracotta */
     
-    --color-surface: 12 12 15; /* #0C0C0F - Sleek Dark Surface */
-    --color-border: 39 39 42; /* #27272A - Zinc Border */
+    --color-surface: 32 32 37; /* #202025 - Dark Surface */
+    --color-border: 52 52 58; /* #34343A - Subtle Border */
     
-    --glass-border: rgba(255, 255, 255, 0.12);
-    --glass-bg: rgba(12, 12, 15, 0.92);
-    --glass-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.98);
+    --glass-border: rgba(245, 243, 239, 0.08);
+    --glass-bg: rgba(32, 32, 37, 0.92);
+    --glass-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.6);
 
-    --lofi-gradient-1: #09090b; /* Pure Obsidian */
-    --lofi-gradient-2: #000000; /* Pure Black */
-    --lofi-gradient-3: #121215;
+    --lofi-gradient-1: #1a1a1e; /* Charcoal */
+    --lofi-gradient-2: #16161a; /* Deep Charcoal */
+    --lofi-gradient-3: #202025;
   }
 
   html {
@@ -68,7 +68,7 @@
     @apply font-serif tracking-tight text-[rgb(var(--color-text))];
   }
 
-  /* Custom Minimalist Navy Scrollbar */
+  /* Custom Warm Sage Scrollbar */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -82,14 +82,14 @@
 }
 
 @layer components {
-  /* ─── Navy Minimalist UI Components ─── */
+  /* ─── Warm Neutral UI Components ─── */
   
   .glass-card {
     @apply bg-[var(--glass-bg)] backdrop-blur-2xl border border-[var(--glass-border)] shadow-[var(--glass-shadow)] rounded-3xl transition-all duration-300;
   }
 
   .glass-card-hover {
-    @apply hover:shadow-[0_20px_45px_-12px_rgba(46,134,193,0.2)] hover:-translate-y-1.5 dark:hover:shadow-[0_20px_45px_-12px_rgba(52,152,219,0.35)];
+    @apply hover:shadow-[0_20px_45px_-12px_rgba(28,28,30,0.12)] hover:-translate-y-1.5 dark:hover:shadow-[0_20px_45px_-12px_rgba(0,0,0,0.4)];
   }
 
   .glass-button {
@@ -97,7 +97,7 @@
   }
   
   .glass-button-primary {
-    @apply glass-button bg-[rgb(var(--color-primary))] text-white hover:bg-[rgb(var(--color-primary-dark))] shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 hover:-translate-y-0.5;
+    @apply glass-button bg-[rgb(var(--color-primary))] text-white hover:bg-[rgb(var(--color-primary-dark))] shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5;
   }
 
   .glass-button-secondary {

@@ -22,7 +22,7 @@ export default function Footer() {
     return (
         <footer className="border-t border-border bg-surface text-text relative overflow-hidden">
             {/* Subtle background glow */}
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3/4 h-64 bg-primary/5 blur-[100px] pointer-events-none" />
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3/4 h-64 bg-primary/3 blur-[100px] pointer-events-none" />
 
             <div className="mx-auto grid max-w-7xl gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[1.4fr_0.6fr_0.6fr_1fr] lg:gap-16 lg:px-8 relative z-10">
                 {/* Brand column */}
@@ -38,7 +38,7 @@ export default function Footer() {
 
                     {/* Owner badge */}
                     <div className="flex items-center gap-4">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/15">
                             <Icon name="UserRound" className="h-6 w-6" />
                         </div>
                         <div>

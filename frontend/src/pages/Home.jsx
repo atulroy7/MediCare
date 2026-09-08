@@ -36,24 +36,25 @@ function AgentHomeView() {
             <Seo title="Agent Command Center | Jaya Medical Store" description="Real-time clinical verification dashboard and new approval request management." />
 
             {/* Agent Hero Banner */}
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#1B4F72] via-[#2E86C1] to-[#154360] text-white p-8 sm:p-12 shadow-2xl border border-white/20">
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#4B6B50] via-[#6B8F71] to-[#3D5940] text-white p-8 sm:p-12 shadow-2xl border border-white/10">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(255,255,255,0.08),transparent_60%)]" />
                 <div className="relative z-10 max-w-3xl space-y-4">
-                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/15 border border-white/30 text-white text-xs font-bold uppercase tracking-wider backdrop-blur-md">
-                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/12 border border-white/20 text-white text-xs font-bold uppercase tracking-wider backdrop-blur-md">
+                        <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse" />
                         Pharmacist Clinical Command Center
                     </div>
                     <h1 className="font-serif text-3xl sm:text-5xl font-bold tracking-tight leading-tight text-white">
                         Welcome Back, Agent {user?.name || 'Pharmacist'}
                     </h1>
-                    <p className="text-sm sm:text-base text-sky-100 leading-relaxed max-w-2xl">
+                    <p className="text-sm sm:text-base text-white/75 leading-relaxed max-w-2xl">
                         Monitor live incoming doctor prescription requests, verify order medicines, and issue pharmacist clearance notes in real-time.
                     </p>
                     <div className="pt-2 flex flex-wrap gap-4">
                         <Link
                             to="/dashboard"
-                            className="px-6 py-3.5 rounded-2xl bg-white text-[#1B4F72] font-extrabold text-sm hover:bg-sky-50 transition-all shadow-lg flex items-center gap-2"
+                            className="px-6 py-3.5 rounded-2xl bg-white text-[#4B6B50] font-extrabold text-sm hover:bg-white/90 transition-all shadow-lg flex items-center gap-2"
                         >
-                            <Icon name="Stethoscope" className="w-4 h-4 text-[#1B4F72]" />
+                            <Icon name="Stethoscope" className="w-4 h-4 text-[#4B6B50]" />
                             Open Workstation Queue ({pendingList.length} Pending)
                         </Link>
                     </div>
@@ -62,37 +63,45 @@ function AgentHomeView() {
 
             {/* Live Verification Metrics Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="bg-surface border border-border rounded-3xl p-6 shadow-sm space-y-2">
+                <div className="bg-surface border border-border rounded-2xl p-6 shadow-sm space-y-2">
                     <div className="flex items-center justify-between text-xs text-text-muted">
                         <span>New Requests Pending</span>
-                        <Icon name="Clock" className="w-5 h-5 text-amber-500" />
+                        <div className="p-1.5 rounded-lg bg-amber-500/10">
+                            <Icon name="Clock" className="w-5 h-5 text-amber-500" />
+                        </div>
                     </div>
-                    <p className="font-serif font-bold text-3xl text-amber-500">{pendingList.length}</p>
+                    <p className="font-serif font-bold text-3xl text-amber-600">{pendingList.length}</p>
                     <p className="text-xs text-text-muted">Awaiting Agent Approval</p>
                 </div>
 
-                <div className="bg-surface border border-border rounded-3xl p-6 shadow-sm space-y-2">
+                <div className="bg-surface border border-border rounded-2xl p-6 shadow-sm space-y-2">
                     <div className="flex items-center justify-between text-xs text-text-muted">
                         <span>Approved Clearances</span>
-                        <Icon name="CheckCircle" className="w-5 h-5 text-emerald-500" />
+                        <div className="p-1.5 rounded-lg bg-emerald-500/10">
+                            <Icon name="CheckCircle" className="w-5 h-5 text-emerald-500" />
+                        </div>
                     </div>
                     <p className="font-serif font-bold text-3xl text-emerald-600">{approvedList.length}</p>
                     <p className="text-xs text-text-muted">Orders Cleared for Dispatch</p>
                 </div>
 
-                <div className="bg-surface border border-border rounded-3xl p-6 shadow-sm space-y-2">
+                <div className="bg-surface border border-border rounded-2xl p-6 shadow-sm space-y-2">
                     <div className="flex items-center justify-between text-xs text-text-muted">
                         <span>Rejected Requests</span>
-                        <Icon name="XCircle" className="w-5 h-5 text-red-500" />
+                        <div className="p-1.5 rounded-lg bg-red-500/10">
+                            <Icon name="XCircle" className="w-5 h-5 text-red-500" />
+                        </div>
                     </div>
                     <p className="font-serif font-bold text-3xl text-red-500">{rejectedList.length}</p>
                     <p className="text-xs text-text-muted">Flagged Prescriptions</p>
                 </div>
 
-                <div className="bg-surface border border-border rounded-3xl p-6 shadow-sm space-y-2">
+                <div className="bg-surface border border-border rounded-2xl p-6 shadow-sm space-y-2">
                     <div className="flex items-center justify-between text-xs text-text-muted">
                         <span>Pharmacy License</span>
-                        <Icon name="ShieldCheck" className="w-5 h-5 text-secondary" />
+                        <div className="p-1.5 rounded-lg bg-secondary/10">
+                            <Icon name="ShieldCheck" className="w-5 h-5 text-secondary" />
+                        </div>
                     </div>
                     <p className="font-mono font-bold text-base text-secondary">{user?.licenseNumber || 'MH-PHARM-2024-9918'}</p>
                     <p className="text-xs text-text-muted">Licensed Agent Active</p>
@@ -100,10 +109,10 @@ function AgentHomeView() {
             </div>
 
             {/* Live Incoming Approval Requests Section */}
-            <div className="bg-surface border border-border rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+            <div className="bg-surface border border-border rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
                 <div className="flex items-center justify-between border-b border-border pb-4">
                     <div>
-                        <h2 className="text-xl font-serif font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <h2 className="text-xl font-serif font-bold text-text flex items-center gap-2">
                             <Icon name="FileText" className="w-6 h-6 text-secondary" />
                             Live Pending Approval Requests ({pendingList.length})
                         </h2>
@@ -115,7 +124,7 @@ function AgentHomeView() {
                 </div>
 
                 {pendingList.length === 0 ? (
-                    <div className="p-10 rounded-2xl bg-bg-subtle text-center text-text-muted text-sm space-y-2 border border-dashed border-border">
+                    <div className="p-10 rounded-2xl bg-bg text-center text-text-muted text-sm space-y-2 border border-dashed border-border">
                         <Icon name="CheckCircle2" className="w-10 h-10 text-emerald-500 mx-auto opacity-70" />
                         <p className="font-bold text-text">No pending approval requests right now!</p>
                         <p className="text-xs">All customer doctor notes are cleared.</p>
@@ -123,13 +132,13 @@ function AgentHomeView() {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {pendingList.map((p) => (
-                            <div key={p.id} className="p-5 rounded-2xl bg-bg-subtle border border-border space-y-3 hover:border-secondary/40 transition-all shadow-sm">
+                            <div key={p.id} className="p-5 rounded-2xl bg-bg border border-border space-y-3 hover:border-primary/30 transition-all shadow-sm">
                                 <div className="flex items-start justify-between">
                                     <div>
                                         <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-surface border border-border text-secondary">
                                             {p.id}
                                         </span>
-                                        <h3 className="font-bold text-slate-900 dark:text-white text-base mt-1">{p.patient}</h3>
+                                        <h3 className="font-bold text-text text-base mt-1">{p.patient}</h3>
                                         <p className="text-xs text-text-muted">{p.userEmail} • {p.date}</p>
                                     </div>
                                     <span className="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 font-bold text-[11px] border border-amber-500/20">
@@ -138,7 +147,7 @@ function AgentHomeView() {
                                 </div>
 
                                 {p.medicinesSummary && (
-                                    <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20 text-xs">
+                                    <div className="p-2.5 rounded-xl bg-primary/8 border border-primary/15 text-xs">
                                         <span className="font-bold text-primary block mb-0.5">💊 Requested Order Medicines:</span>
                                         <span className="text-text font-semibold">{p.medicinesSummary}</span>
                                     </div>
@@ -148,7 +157,7 @@ function AgentHomeView() {
                                     <span className="text-xs text-text-muted">Doc: {p.doctor || 'Practitioner'}</span>
                                     <Link
                                         to="/dashboard"
-                                        className="px-3.5 py-1.5 rounded-xl bg-secondary text-white font-bold text-xs hover:bg-secondary/90 transition-all flex items-center gap-1 shadow-sm"
+                                        className="px-3.5 py-1.5 rounded-xl bg-primary text-white font-bold text-xs hover:bg-primary/90 transition-all flex items-center gap-1 shadow-sm"
                                     >
                                         Review & Approve →
                                     </Link>
@@ -297,7 +306,7 @@ export default function Home() {
                                         const query = e.target.elements.search.value;
                                         if (query) window.location.href = `/products?search=${encodeURIComponent(query)}`;
                                     }}
-                                    className="glass-card p-2 flex items-center gap-2 border border-border shadow-2xl focus-within:border-primary transition-all"
+                                    className="glass-card p-2 flex items-center gap-2 border border-border shadow-lg focus-within:border-primary/40 transition-all"
                                 >
                                     <Icon name="Search" className="h-5 w-5 text-primary ml-3" />
                                     <input
@@ -330,7 +339,7 @@ export default function Home() {
                             transition={{ duration: 0.6, delay: 0.15 }}
                             className="lg:col-span-5 relative"
                         >
-                            <div className="glass-card p-6 sm:p-8 relative overflow-hidden border border-border shadow-2xl space-y-6">
+                            <div className="glass-card p-6 sm:p-8 relative overflow-hidden border border-border shadow-lg space-y-6">
                                 <div className="flex items-center justify-between border-b border-border/80 pb-4">
                                     <div className="flex items-center gap-3">
                                         <div className="p-2.5 rounded-2xl bg-primary/10 text-primary">
@@ -341,7 +350,7 @@ export default function Home() {
                                             <p className="text-xs text-text-muted">Licensed Retail Pharmacy</p>
                                         </div>
                                     </div>
-                                    <span className="px-3 py-1 rounded-full bg-primary/15 text-primary text-[10px] uppercase font-extrabold tracking-wider">
+                                    <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] uppercase font-extrabold tracking-wider border border-primary/20">
                                         Verified
                                     </span>
                                 </div>
@@ -354,7 +363,7 @@ export default function Home() {
                                             <Link
                                                 key={cat.name}
                                                 to={`/products?category=${encodeURIComponent(cat.name)}`}
-                                                className="p-3 rounded-2xl bg-bg-subtle/80 hover:bg-primary/10 border border-border hover:border-primary/30 transition-all flex items-center gap-2.5 group"
+                                                className="p-3 rounded-2xl bg-bg hover:bg-primary/8 border border-border hover:border-primary/20 transition-all flex items-center gap-2.5 group"
                                             >
                                                 <div className="p-1.5 rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
                                                     <Icon name={cat.iconKey || 'Pill'} className="w-4 h-4" />
@@ -366,7 +375,7 @@ export default function Home() {
                                 </div>
 
                                 {/* Quick Prescription Dropzone Callout */}
-                                <div className="p-4 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-between gap-4">
+                                <div className="p-4 rounded-2xl bg-primary/8 border border-primary/15 flex items-center justify-between gap-4">
                                     <div>
                                         <p className="text-xs font-bold text-text">Have a Doctor's Note?</p>
                                         <p className="text-[11px] text-text-muted">Upload Prescription for instant verification</p>

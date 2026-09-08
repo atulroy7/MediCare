@@ -12,13 +12,13 @@ export default function PrescriptionDetailModal({ selectedRx, onClose, onApprove
 
     return (
         <>
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fade-in">
-                <div className="bg-surface border border-border rounded-3xl max-w-4xl w-full max-h-[92vh] overflow-y-auto shadow-2xl p-6 sm:p-8 space-y-6">
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in">
+                <div className="bg-surface border border-border rounded-2xl max-w-4xl w-full max-h-[92vh] overflow-y-auto shadow-2xl p-6 sm:p-8 space-y-6">
                     {/* Header */}
                     <div className="flex items-center justify-between border-b border-border pb-4">
                         <div>
                             <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-bold font-mono tracking-wider text-secondary uppercase bg-secondary/10 px-2.5 py-0.5 rounded-full border border-secondary/20">
+                                <span className="text-[10px] font-bold font-mono tracking-wider text-secondary uppercase bg-secondary/10 px-2.5 py-0.5 rounded-full border border-secondary/15">
                                     Prescription Audit File #{selectedRx.id}
                                 </span>
                                 <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
@@ -33,14 +33,14 @@ export default function PrescriptionDetailModal({ selectedRx, onClose, onApprove
                                     {selectedRx.status ? selectedRx.status.replace('_', ' ') : 'PENDING'}
                                 </span>
                             </div>
-                            <h3 className="text-xl font-bold font-serif text-slate-900 dark:text-white mt-1">
+                            <h3 className="text-xl font-bold font-serif text-text mt-1">
                                 {selectedRx.patient || selectedRx.userName || 'Patient Prescription'}
                             </h3>
                         </div>
                         <button
                             type="button"
                             onClick={onClose}
-                            className="p-2 rounded-xl text-text-muted hover:bg-surface-hover hover:text-text transition-all"
+                            className="p-2 rounded-xl text-text-muted hover:bg-bg hover:text-text transition-all"
                         >
                             <Icon name="X" className="w-5 h-5" />
                         </button>
@@ -54,10 +54,10 @@ export default function PrescriptionDetailModal({ selectedRx, onClose, onApprove
                                 <span className="text-[11px] text-primary font-mono">{selectedRx.filename || 'prescription.jpg'}</span>
                             </h4>
 
-                            <div className="rounded-2xl bg-surface-hover border border-border p-3 flex flex-col items-center justify-center text-center overflow-hidden min-h-[280px] relative group">
+                            <div className="rounded-2xl bg-bg border border-border p-3 flex flex-col items-center justify-center text-center overflow-hidden min-h-[280px] relative group">
                                 {hasImage ? (
                                     <div className="w-full space-y-3">
-                                        <div className="relative overflow-hidden rounded-xl border border-border bg-black/10 dark:bg-white/5 cursor-pointer" onClick={() => setFullImageZoom(true)}>
+                                        <div className="relative overflow-hidden rounded-xl border border-border bg-black/5 dark:bg-white/5 cursor-pointer" onClick={() => setFullImageZoom(true)}>
                                             <img
                                                 src={selectedRx.photoUrl}
                                                 alt={`Prescription ${selectedRx.id}`}
@@ -71,7 +71,7 @@ export default function PrescriptionDetailModal({ selectedRx, onClose, onApprove
                                         <button
                                             type="button"
                                             onClick={() => setFullImageZoom(true)}
-                                            className="w-full py-2 px-4 rounded-xl bg-primary/10 text-primary font-bold text-xs hover:bg-primary/20 transition-all flex items-center justify-center gap-1.5 border border-primary/20"
+                                            className="w-full py-2 px-4 rounded-xl bg-primary/10 text-primary font-bold text-xs hover:bg-primary/15 transition-all flex items-center justify-center gap-1.5 border border-primary/15"
                                         >
                                             <Icon name="Maximize2" className="w-4 h-4" />
                                             View Full Screen Image
@@ -88,7 +88,7 @@ export default function PrescriptionDetailModal({ selectedRx, onClose, onApprove
                                         <a
                                             href={selectedRx.photoUrl}
                                             download={selectedRx.filename || 'prescription.pdf'}
-                                            className="w-full py-2 px-4 rounded-xl bg-primary/10 text-primary font-bold text-xs hover:bg-primary/20 transition-all flex items-center justify-center gap-1.5 border border-primary/20"
+                                            className="w-full py-2 px-4 rounded-xl bg-primary/10 text-primary font-bold text-xs hover:bg-primary/15 transition-all flex items-center justify-center gap-1.5 border border-primary/15"
                                         >
                                             <Icon name="Download" className="w-4 h-4" />
                                             Download PDF
@@ -118,7 +118,7 @@ export default function PrescriptionDetailModal({ selectedRx, onClose, onApprove
                         {/* Prescription Details & Pharmacist Advice Column */}
                         <div className="space-y-4">
                             {/* Patient & Doctor Metadata */}
-                            <div className="bg-surface-hover border border-border rounded-2xl p-4 space-y-2 text-xs">
+                            <div className="bg-bg border border-border rounded-2xl p-4 space-y-2 text-xs">
                                 <div className="flex justify-between border-b border-border/50 pb-2">
                                     <span className="text-text-muted font-bold">Patient Name:</span>
                                     <span className="font-semibold text-text">{selectedRx.patient || 'Patient'}</span>
@@ -138,13 +138,13 @@ export default function PrescriptionDetailModal({ selectedRx, onClose, onApprove
                             </div>
 
                             {/* Medicines Under Doctor Verification */}
-                            <div className="bg-primary/10 border border-primary/30 rounded-2xl p-4 space-y-2">
+                            <div className="bg-primary/8 border border-primary/15 rounded-2xl p-4 space-y-2">
                                 <div className="flex items-center justify-between">
                                     <h4 className="text-xs font-extrabold uppercase text-primary tracking-wider flex items-center gap-1.5">
                                         <Icon name="Stethoscope" className="w-4 h-4" />
                                         Medicines Under Doctor Verification
                                     </h4>
-                                    <span className="text-[10px] font-bold font-mono bg-primary/20 text-primary px-2.5 py-0.5 rounded-full">
+                                    <span className="text-[10px] font-bold font-mono bg-primary/15 text-primary px-2.5 py-0.5 rounded-full">
                                         Clinical Verification
                                     </span>
                                 </div>
@@ -157,7 +157,7 @@ export default function PrescriptionDetailModal({ selectedRx, onClose, onApprove
                             </div>
 
                             {/* Customer Notes */}
-                            <div className="bg-surface-hover border border-border rounded-2xl p-4 space-y-1">
+                            <div className="bg-bg border border-border rounded-2xl p-4 space-y-1">
                                 <h4 className="text-xs font-extrabold uppercase text-text-muted tracking-wider">Patient / Doctor Notes</h4>
                                 <p className="text-xs text-text leading-relaxed font-mono">
                                     {selectedRx.notes || 'No extra notes provided.'}
@@ -175,7 +175,7 @@ export default function PrescriptionDetailModal({ selectedRx, onClose, onApprove
                                         value={agentSuggestions[selectedRx.id] ?? (selectedRx.agentSuggestion || '')}
                                         onChange={(e) => setAgentSuggestions({ ...agentSuggestions, [selectedRx.id]: e.target.value })}
                                         placeholder="Type specific dosage instructions or clinical advice for this customer..."
-                                        className="w-full text-xs p-3 rounded-xl border border-border bg-surface text-text focus:ring-2 focus:ring-secondary outline-none transition-all resize-none"
+                                        className="w-full text-xs p-3 rounded-xl border border-border bg-bg text-text focus:ring-2 focus:ring-primary/30 focus:border-primary/40 outline-none transition-all resize-none"
                                     />
                                     <button
                                         type="button"
@@ -188,7 +188,7 @@ export default function PrescriptionDetailModal({ selectedRx, onClose, onApprove
                                 </div>
                             ) : (
                                 selectedRx.agentSuggestion && (
-                                    <div className="bg-secondary/10 border border-secondary/30 rounded-2xl p-4 space-y-1">
+                                    <div className="bg-secondary/8 border border-secondary/15 rounded-2xl p-4 space-y-1">
                                         <div className="flex items-center gap-1.5 text-xs font-bold text-secondary">
                                             <Icon name="Stethoscope" className="w-4 h-4" />
                                             Licensed Pharmacist Clinical Advice:

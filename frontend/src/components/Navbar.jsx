@@ -22,11 +22,11 @@ export default function Navbar() {
     return (
         <header className="sticky top-4 z-50 px-4 sm:px-6 lg:px-8 mb-6 pointer-events-none">
             <div className="mx-auto max-w-7xl pointer-events-auto">
-                <nav aria-label="Primary navigation" className="bg-[var(--glass-bg)] border border-[var(--glass-border)] shadow-xl shadow-primary/5 backdrop-blur-2xl rounded-full px-5 py-3 transition-all duration-300 flex items-center justify-between">
+                <nav aria-label="Primary navigation" className="bg-[var(--glass-bg)] border border-[var(--glass-border)] shadow-lg backdrop-blur-2xl rounded-full px-5 py-3 transition-all duration-300 flex items-center justify-between">
                     
                     {/* Brand Logo */}
                     <Link to="/" className="flex items-center gap-2.5 group pl-1">
-                        <div className="bg-primary text-white p-2 rounded-full group-hover:scale-105 transition-transform shadow-md shadow-primary/30">
+                        <div className="bg-primary text-white p-2 rounded-full group-hover:scale-105 transition-transform shadow-md shadow-primary/20">
                             <Icon name="Activity" className="h-4 w-4" />
                         </div>
                         <p className="font-serif text-lg font-bold tracking-tight text-text">MediCare</p>
@@ -141,7 +141,7 @@ export default function Navbar() {
                         {isAuthenticated ? (
                             <Link
                                 to="/dashboard"
-                                className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-all text-xs font-bold text-primary"
+                                className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/15 hover:bg-primary/15 transition-all text-xs font-bold text-primary"
                             >
                                 <span className={`w-2 h-2 rounded-full ${role === 'agent' ? 'bg-secondary' : 'bg-primary'}`} />
                                 <span className="max-w-[100px] truncate">{user?.name || 'Account'}</span>
@@ -152,7 +152,7 @@ export default function Navbar() {
                         ) : (
                             <Link
                                 to="/login"
-                                className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-white hover:bg-primary-dark transition-all text-xs font-bold shadow-md shadow-primary/25 hover:scale-105"
+                                className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-white hover:bg-primary-dark transition-all text-xs font-bold shadow-md shadow-primary/20 hover:scale-105"
                             >
                                 <Icon name="User" className="h-3.5 w-3.5" />
                                 <span>Login</span>
@@ -264,7 +264,7 @@ export default function Navbar() {
 const navCapsuleClass = (isActive) =>
     [
         'px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200',
-        isActive ? 'bg-primary text-white shadow-md shadow-primary/20 scale-105' : 'text-text-muted hover:text-text hover:bg-surface/80',
+        isActive ? 'bg-primary text-white shadow-sm' : 'text-text-muted hover:text-text hover:bg-surface/80',
     ].join(' ');
 
 const mobileNavClass = (isActive) =>
