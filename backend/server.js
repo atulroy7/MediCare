@@ -132,7 +132,7 @@ app.use('/api/prescriptions', prescriptionRoutes);
 const frontendDist = path.resolve(__dirname, '../frontend/dist');
 if (fs.existsSync(frontendDist)) {
     app.use(express.static(frontendDist));
-    app.get('*', (req, res, next) => {
+    app.get('{*splat}', (req, res, next) => {
         if (req.originalUrl.startsWith('/api')) {
             return next();
         }
