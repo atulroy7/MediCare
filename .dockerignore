@@ -1,11 +1,29 @@
+# Dependencies — rebuilt inside Docker
 node_modules
-npm-debug.log
+**/node_modules
+
+# Build artifacts — rebuilt inside Docker
+frontend/dist
+backend/dist
+
+# Git
 .git
 .github
 .gitignore
+
+# Environment files — set via platform env vars, never bake into image
 .env
-.env.local
-.env.development
-.env.production
-frontend/dist
+.env.*
+**/.env
+**/.env.*
+
+# Logs
+npm-debug.log*
 backend/logs
+*.log
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode
+.idea

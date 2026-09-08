@@ -1,19 +1,37 @@
-version: '3.8'
+# ============================================================
+# docker-compose.yml — LOCAL TESTING ONLY
+# Simulates the exact same environment as Render/cloud.
+# Usage: docker compose up --build
+# Then open: http://localhost:5000
+# ============================================================
+
+version: '3.9'
 
 services:
-  medicare-app:
+  medicare:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: medicare_fullstack
-    restart: unless-stopped
+    container_name: medicare-fullstack
     ports:
       - "5000:5000"
     environment:
       - NODE_ENV=production
       - PORT=5000
-      - MONGO_URI=${MONGO_URI:-mongodb://localhost:27017/medicare}
-      - JWT_SECRET=${JWT_SECRET:-medicare_jwt_secret_production_key_2026}
+      # ── Fill these in for local testing ──────────────────
+      # Copy your .env values here (DO NOT commit real secrets)
+      - MONGO_URI=${MONGO_URI:-}
+      - JWT_SECRET=${JWT_SECRET:-local_dev_secret_change_me}
       - CLIENT_URL=*
       - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID:-}
       - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET:-}
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME:-}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY:-}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET:-}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s

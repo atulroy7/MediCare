@@ -1,6 +1,8 @@
 services:
   # =========================================================================
-  # Option A: Single Full-Stack Web Service (Unified Docker Container)
+  # Single Full-Stack Web Service — React frontend + Express backend
+  # One Docker container, one URL, one platform.
+  # Deploy: connect GitHub → Render auto-detects this file → done.
   # =========================================================================
   - type: web
     name: medicare-fullstack
@@ -8,18 +10,44 @@ services:
     plan: free
     dockerfilePath: Dockerfile
     dockerContext: .
+    # Render sets PORT automatically; our server reads process.env.PORT
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 5000
+
+      # Render assigns the PORT — don't hardcode it here
+      # (Render injects $PORT automatically for web services)
+
+      # ── MongoDB Atlas ─────────────────────────────────────
+      # Paste your MongoDB Atlas connection string here after deploy
       - key: MONGO_URI
-        sync: false
+        sync: false          # set manually in Render dashboard
+
+      # ── Auth ──────────────────────────────────────────────
       - key: JWT_SECRET
-        generateValue: true
+        generateValue: true  # Render auto-generates a secure secret
+
+      # ── CORS ──────────────────────────────────────────────
+      # Set to * for now; change to your Render URL after first deploy
       - key: CLIENT_URL
         value: "*"
+
+      # ── Razorpay (optional — payment gateway) ─────────────
       - key: RAZORPAY_KEY_ID
         sync: false
       - key: RAZORPAY_KEY_SECRET
+        sync: false
+
+      # ── Cloudinary (optional — prescription image upload) ──
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+
+      # ── Telegram Notifications (optional) ─────────────────
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
         sync: false
