@@ -118,6 +118,9 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+// Lightweight ping endpoint — used by UptimeRobot/cron-job.org to prevent Render free-tier sleep
+app.get('/ping', (req, res) => res.status(200).send('pong'));
+
 app.use('/api/auth', authRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/products', productRoutes);
