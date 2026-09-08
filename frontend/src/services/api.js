@@ -4,11 +4,20 @@
  */
 
 export const getApiBaseUrl = () => {
-    let url = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').trim().replace(/\/+$/, '');
-    if (!url.endsWith('/api')) {
-        url += '/api';
+    if (import.meta.env.VITE_API_URL) {
+        let url = import.meta.env.VITE_API_URL.trim().replace(/\/+$/, '');
+        if (!url.endsWith('/api')) {
+            url += '/api';
+        }
+        return url;
     }
-    return url;
+    
+    // In production browser, if no VITE_API_URL is provided, dynamically use the current domain
+    if (typeof window !== 'undefined' && window.location && window.location.hostname && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        return `${window.location.origin}/api`;
+    }
+
+    return 'http://localhost:5000/api';
 };
 
 const API_BASE_URL = getApiBaseUrl();
