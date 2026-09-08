@@ -12,16 +12,18 @@ function AgentHomeView() {
     const [queue, setQueue] = useState([]);
 
     const loadData = () => {
-        const stored = JSON.parse(localStorage.getItem('jaya_all_prescriptions') || '[]');
+        const stored = JSON.parse(localStorage.getItem('medicare_all_prescriptions') || localStorage.getItem('jaya_all_prescriptions') || '[]');
         setQueue(stored);
     };
 
     useEffect(() => {
         loadData();
         const handleSync = () => loadData();
+        window.addEventListener('medicare_prescription_update', handleSync);
         window.addEventListener('jaya_prescription_update', handleSync);
         window.addEventListener('storage', handleSync);
         return () => {
+            window.removeEventListener('medicare_prescription_update', handleSync);
             window.removeEventListener('jaya_prescription_update', handleSync);
             window.removeEventListener('storage', handleSync);
         };
@@ -33,7 +35,7 @@ function AgentHomeView() {
 
     return (
         <div className="min-h-screen py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-10">
-            <Seo title="Agent Command Center | Jaya Medical Store" description="Real-time clinical verification dashboard and new approval request management." />
+            <Seo title="Agent Command Center | MediCare" description="Real-time clinical verification dashboard and new approval request management." />
 
             {/* Agent Hero Banner */}
             <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#4B6B50] via-[#6B8F71] to-[#3D5940] text-white p-8 sm:p-12 shadow-2xl border border-white/10">
@@ -269,7 +271,7 @@ export default function Home() {
         <>
             <Seo
                 title="Home"
-                description="Jaya Medical Store is a curated medical store experience with medicines, prescription uploads, wellness products, and local delivery support."
+                description="MediCare is a curated medical store experience with medicines, prescription uploads, wellness products, and local delivery support."
             />
 
             {/* Hero Section */}
@@ -291,7 +293,7 @@ export default function Home() {
                             <div className="space-y-4">
                                 <h1 className="display-heading text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-text leading-[1.05]">
                                     Authentic Healthcare, <br />
-                                    <span className="text-primary italic font-normal">Simplified.</span>
+                                    <span className="text-primary font-bold">Simplified.</span>
                                 </h1>
                                 <p className="text-base sm:text-lg text-text-muted max-w-2xl leading-relaxed">
                                     Direct access to 100% genuine medicines, vitamins, baby care, and surgical supplies with same-day doorstep fulfillment.
@@ -346,7 +348,7 @@ export default function Home() {
                                             <Icon name="ShieldCheck" className="w-6 h-6" />
                                         </div>
                                         <div>
-                                            <h3 className="font-serif text-lg font-bold text-text">Jaya Pharmacy</h3>
+                                            <h3 className="font-serif text-lg font-bold text-text">MediCare</h3>
                                             <p className="text-xs text-text-muted">Licensed Retail Pharmacy</p>
                                         </div>
                                     </div>
@@ -556,7 +558,7 @@ export default function Home() {
                         </motion.h2>
                         <motion.div variants={fadeInUp} className="h-1 w-16 bg-primary rounded-full" />
                         <motion.p variants={fadeInUp} className="text-lg text-text-muted leading-relaxed">
-                            Founded by Madan Mohan Mishra, Jaya Medical Store was established to elevate the standard of pharmaceutical provision. We view every prescription not merely as a transaction, but as a critical component of your personal health journey, deserving of the utmost respect and rigorous attention to detail.
+                            Founded by Madan Mohan Mishra, MediCare was established to elevate the standard of pharmaceutical provision. We view every prescription not merely as a transaction, but as a critical component of your personal health journey, deserving of the utmost respect and rigorous attention to detail.
                         </motion.p>
                         <motion.div variants={fadeInUp}>
                             <Link to="/about" className="glass-button-secondary">

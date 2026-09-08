@@ -11,6 +11,11 @@ export function CartProvider({ children }) {
     const navigate = useNavigate();
 
     const userCartKey = useMemo(() => {
+        if (!user) return 'medicare-cart-guest';
+        return `medicare-cart-${user.id || user.email}`;
+    }, [user]);
+
+    const legacyUserCartKey = useMemo(() => {
         if (!user) return 'jaya-medical-cart-guest';
         return `jaya-medical-cart-${user.id || user.email}`;
     }, [user]);
@@ -21,7 +26,7 @@ export function CartProvider({ children }) {
     useEffect(() => {
         if (typeof window === 'undefined') return;
         try {
-            const raw = window.localStorage.getItem(userCartKey);
+            const raw = window.localStorage.getItem(userCartKey) || window.localStorage.getItem(legacyUserCartKey);
             if (raw) {
                 const parsed = JSON.parse(raw);
                 setItems(Array.isArray(parsed) ? parsed : []);
@@ -31,7 +36,7 @@ export function CartProvider({ children }) {
         } catch {
             setItems([]);
         }
-    }, [userCartKey]);
+    }, [userCartKey, legacyUserCartKey]);
 
     // Save items to user-specific localStorage key on change
     useEffect(() => {

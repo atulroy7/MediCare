@@ -134,7 +134,7 @@ export default function CustomerDashboard({
                                         <Icon name="Stethoscope" className="w-3.5 h-3.5" />
                                         Pharmacist Dosage Advice:
                                     </div>
-                                    <p className="text-xs text-text italic leading-relaxed">{rx.agentSuggestion}</p>
+                                    <p className="text-xs text-text font-bold leading-relaxed">{rx.agentSuggestion}</p>
                                 </div>
                             )}
 

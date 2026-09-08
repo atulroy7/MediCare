@@ -21,7 +21,7 @@ const DEFAULT_USERS = [
         password: 'password123',
         role: 'agent',
         phone: '9123456789',
-        address: 'Jaya Medical Store, Store #42, Mumbai',
+        address: 'MediCare, Store #42, Mumbai',
         agentCode: 'AG-8849',
         licenseNumber: 'MH-PHARM-2024-9918'
     }
@@ -30,7 +30,7 @@ const DEFAULT_USERS = [
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(() => {
         try {
-            const saved = localStorage.getItem('jaya_user');
+            const saved = localStorage.getItem('medicare_user') || localStorage.getItem('jaya_user');
             return saved ? JSON.parse(saved) : null;
         } catch {
             return null;
@@ -38,24 +38,28 @@ export function AuthProvider({ children }) {
     });
 
     const [token, setToken] = useState(() => {
-        return localStorage.getItem('jaya_token') || null;
+        return localStorage.getItem('medicare_token') || localStorage.getItem('jaya_token') || null;
     });
 
     const [loading, setLoading] = useState(false);
 
     // Initialize registered users database in localStorage if not set
     useEffect(() => {
-        const storedUsers = localStorage.getItem('jaya_registered_users');
+        const storedUsers = localStorage.getItem('medicare_registered_users') || localStorage.getItem('jaya_registered_users');
         if (!storedUsers) {
-            localStorage.setItem('jaya_registered_users', JSON.stringify(DEFAULT_USERS));
+            localStorage.setItem('medicare_registered_users', JSON.stringify(DEFAULT_USERS));
+        } else if (!localStorage.getItem('medicare_registered_users')) {
+            localStorage.setItem('medicare_registered_users', storedUsers);
         }
     }, []);
 
     useEffect(() => {
         if (user && token) {
-            localStorage.setItem('jaya_user', JSON.stringify(user));
-            localStorage.setItem('jaya_token', token);
+            localStorage.setItem('medicare_user', JSON.stringify(user));
+            localStorage.setItem('medicare_token', token);
         } else {
+            localStorage.removeItem('medicare_user');
+            localStorage.removeItem('medicare_token');
             localStorage.removeItem('jaya_user');
             localStorage.removeItem('jaya_token');
         }
@@ -95,7 +99,7 @@ export function AuthProvider({ children }) {
             }
 
             // Client-side registered accounts verification (fallback if server is offline)
-            const registeredUsers = JSON.parse(localStorage.getItem('jaya_registered_users') || JSON.stringify(DEFAULT_USERS));
+            const registeredUsers = JSON.parse(localStorage.getItem('medicare_registered_users') || localStorage.getItem('jaya_registered_users') || JSON.stringify(DEFAULT_USERS));
             const existingUser = registeredUsers.find(u => u.email.toLowerCase() === cleanEmail);
 
             if (!existingUser) {
@@ -135,9 +139,9 @@ export function AuthProvider({ children }) {
 
                 const data = await response.json();
                 if (response.ok && data.success) {
-                    const registeredUsers = JSON.parse(localStorage.getItem('jaya_registered_users') || JSON.stringify(DEFAULT_USERS));
+                    const registeredUsers = JSON.parse(localStorage.getItem('medicare_registered_users') || localStorage.getItem('jaya_registered_users') || JSON.stringify(DEFAULT_USERS));
                     registeredUsers.push(data.user);
-                    localStorage.setItem('jaya_registered_users', JSON.stringify(registeredUsers));
+                    localStorage.setItem('medicare_registered_users', JSON.stringify(registeredUsers));
 
                     setUser(data.user);
                     setToken(data.token);
@@ -153,7 +157,7 @@ export function AuthProvider({ children }) {
             }
 
             // Client-side fallback if backend server is not running
-            const registeredUsers = JSON.parse(localStorage.getItem('jaya_registered_users') || JSON.stringify(DEFAULT_USERS));
+            const registeredUsers = JSON.parse(localStorage.getItem('medicare_registered_users') || localStorage.getItem('jaya_registered_users') || JSON.stringify(DEFAULT_USERS));
             const cleanPhone = userData.phone ? userData.phone.replace(/\D/g, '') : '';
             const emailExists = registeredUsers.some(u => u.email.toLowerCase() === cleanEmail);
             const phoneExists = cleanPhone && registeredUsers.some(u => u.phone && u.phone.replace(/\D/g, '') === cleanPhone);
@@ -178,7 +182,7 @@ export function AuthProvider({ children }) {
             };
 
             registeredUsers.push(newUser);
-            localStorage.setItem('jaya_registered_users', JSON.stringify(registeredUsers));
+            localStorage.setItem('medicare_registered_users', JSON.stringify(registeredUsers));
 
             const mockToken = 'mock_jwt_token_' + Date.now();
             setUser(newUser);
@@ -192,6 +196,8 @@ export function AuthProvider({ children }) {
     const logout = () => {
         setUser(null);
         setToken(null);
+        localStorage.removeItem('medicare_user');
+        localStorage.removeItem('medicare_token');
         localStorage.removeItem('jaya_user');
         localStorage.removeItem('jaya_token');
     };

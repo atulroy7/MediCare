@@ -11,7 +11,7 @@ export default function OwnerCard({ compact = false }) {
             <div className={`flex ${compact ? 'items-center gap-4' : 'flex-col gap-5'} `}>
                 <img
                     src="/images/owner.jpg"
-                    alt="Madan Mohan Mishra - Proprietor, Jaya Medical Store"
+                    alt="Madan Mohan Mishra - Proprietor, MediCare"
                     className={`rounded-full object-cover ${compact ? 'h-24 w-24' : 'h-44 w-44'}`}
                     loading="lazy"
                 />

@@ -7,7 +7,7 @@ import { milestones, valueCards, ownerProfile } from '../data/products';
 export default function About() {
     return (
         <>
-            <Seo title="About Us" description="Learn the story, values, and owner profile behind Jaya Medical Store." />
+            <Seo title="About Us" description="Learn the story, values, and owner profile behind MediCare." />
 
             <main className="bg-surface min-h-[calc(100vh-72px)] relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-1/3 h-[500px] bg-primary/10 blur-[120px] pointer-events-none" />
@@ -23,10 +23,10 @@ export default function About() {
                     >
                         <span className="kicker">Our Story</span>
                         <h1 className="display-heading !mb-4 text-balance">
-                            A pharmacy shaped around <span className="text-primary italic font-normal">trust</span> and attention.
+                            A pharmacy shaped around <span className="text-primary font-bold">trust</span> and attention.
                         </h1>
                         <p className="mt-6 text-lg leading-relaxed text-text-muted text-balance">
-                            Jaya Medical Store is built to feel like a clean, welcoming pharmacy counter online. The goal is simple:- genuine products, careful verification, and a service experience that helps people feel informed rather than rushed.
+                            MediCare is built to feel like a clean, welcoming pharmacy counter online. The goal is simple:- genuine products, careful verification, and a service experience that helps people feel informed rather than rushed.
                         </p>
                     </motion.div>
 
@@ -59,7 +59,7 @@ export default function About() {
                                         <p className="mt-6 text-base leading-relaxed text-text-muted md:mt-8">
                                             With over {new Date().getFullYear() - 2010} years of retail pharmacy experience, Madan Mohan Mishra has shaped the store around careful counseling, accurate product handling, and consistent follow-up.
                                         </p>
-                                        <blockquote className="mt-8 border-l-2 border-primary pl-6 font-serif text-xl italic leading-relaxed text-text">
+                                        <blockquote className="mt-8 border-l-2 border-primary pl-6 font-serif text-xl font-bold leading-relaxed text-text">
                                             "{ownerProfile.quote}"
                                         </blockquote>
 

@@ -57,7 +57,7 @@ export default function Contact() {
         <>
             <Seo
                 title="Contact"
-                description="Contact Jaya Medical Store for orders, prescription support, and store information."
+                description="Contact MediCare for orders, prescription support, and store information."
             />
 
             <main className="min-h-[calc(100vh-72px)] bg-surface relative overflow-hidden">
@@ -238,7 +238,7 @@ export default function Contact() {
                                         <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-primary">
                                             Proprietor
                                         </p>
-                                        <p className="text-sm italic text-text-muted">
+                                        <p className="text-sm font-bold text-text-muted">
                                             &quot;{ownerProfile.quote}&quot;
                                         </p>
                                     </div>
@@ -256,7 +256,7 @@ export default function Contact() {
                         className="glass-card overflow-hidden mt-16 h-[400px] w-full relative"
                     >
                         <iframe
-                            title="Jaya Medical Store location"
+                            title="MediCare location"
                             src={storeInfo.mapEmbedUrl}
                             className="h-full w-full border-0 absolute inset-0 z-10 opacity-90 mix-blend-luminosity hover:mix-blend-normal hover:opacity-100 transition-all duration-700"
                             loading="lazy"

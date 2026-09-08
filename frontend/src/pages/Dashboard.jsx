@@ -15,8 +15,9 @@ export default function Dashboard() {
     const { user, role, logout } = useAuth();
     const { cartCount } = useCart();
 
-    const userRxKey = user ? `jaya_prescriptions_${user.id || user.email}` : '';
-    const userOrderKey = user ? `jaya_orders_${user.id || user.email}` : '';
+    const userRxKey = user ? `medicare_prescriptions_${user.id || user.email}` : '';
+    const userOrderKey = user ? `medicare_orders_${user.id || user.email}` : '';
+    const legacyUserOrderKey = user ? `jaya_orders_${user.id || user.email}` : '';
 
     // States
     const [userPrescriptions, setUserPrescriptions] = useState([]);
@@ -56,9 +57,9 @@ export default function Dashboard() {
 
             // 1. LocalStorage
             try {
-                const globalRx = JSON.parse(localStorage.getItem('jaya_all_prescriptions') || '[]');
-                const emailKeyRx = JSON.parse(localStorage.getItem(`jaya_prescriptions_${cleanEmail}`) || '[]');
-                const idKeyRx = user.id ? JSON.parse(localStorage.getItem(`jaya_prescriptions_${user.id}`) || '[]') : [];
+                const globalRx = JSON.parse(localStorage.getItem('medicare_all_prescriptions') || localStorage.getItem('jaya_all_prescriptions') || '[]');
+                const emailKeyRx = JSON.parse(localStorage.getItem(`medicare_prescriptions_${cleanEmail}`) || localStorage.getItem(`jaya_prescriptions_${cleanEmail}`) || '[]');
+                const idKeyRx = user.id ? JSON.parse(localStorage.getItem(`medicare_prescriptions_${user.id}`) || localStorage.getItem(`jaya_prescriptions_${user.id}`) || '[]') : [];
 
                 [...globalRx.filter(r => r.userEmail && r.userEmail.toLowerCase() === cleanEmail), ...emailKeyRx, ...idKeyRx]
                     .map(mapRx)
@@ -67,7 +68,7 @@ export default function Dashboard() {
 
             // 2. SessionStorage
             try {
-                const sessionRx = JSON.parse(sessionStorage.getItem('jaya_session_prescriptions') || '[]');
+                const sessionRx = JSON.parse(sessionStorage.getItem('medicare_session_prescriptions') || sessionStorage.getItem('jaya_session_prescriptions') || '[]');
                 sessionRx.filter(r => r.userEmail && r.userEmail.toLowerCase() === cleanEmail).forEach(r => {
                     if (r && r.id) {
                         const existing = rxMap.get(r.id);
@@ -102,21 +103,21 @@ export default function Dashboard() {
             };
 
             setUserPrescriptions(Array.from(rxMap.values()).sort(sortByLatest));
-            const orderData = JSON.parse(localStorage.getItem(userOrderKey) || '[]');
+            const orderData = JSON.parse(localStorage.getItem(userOrderKey) || localStorage.getItem(legacyUserOrderKey) || '[]');
             setUserOrders(orderData);
         } else if (role === 'agent') {
             const rxMap = new Map();
 
-            // 1. Check all jaya_prescriptions_* keys & jaya_all_prescriptions in localStorage
+            // 1. Check all medicare_prescriptions_* / jaya_prescriptions_* keys & all_prescriptions in localStorage
             try {
-                const globalRx = JSON.parse(localStorage.getItem('jaya_all_prescriptions') || '[]');
+                const globalRx = JSON.parse(localStorage.getItem('medicare_all_prescriptions') || localStorage.getItem('jaya_all_prescriptions') || '[]');
                 if (Array.isArray(globalRx)) {
                     globalRx.map(mapRx).forEach(r => { if (r && r.id) rxMap.set(r.id, r); });
                 }
 
                 for (let i = 0; i < localStorage.length; i++) {
                     const key = localStorage.key(i);
-                    if (key && (key.startsWith('jaya_prescriptions_') || key === 'jaya_all_prescriptions')) {
+                    if (key && (key.startsWith('medicare_prescriptions_') || key.startsWith('jaya_prescriptions_') || key === 'medicare_all_prescriptions' || key === 'jaya_all_prescriptions')) {
                         const items = JSON.parse(localStorage.getItem(key) || '[]');
                         if (Array.isArray(items)) {
                             items.map(mapRx).forEach(r => {
@@ -136,7 +137,7 @@ export default function Dashboard() {
 
             // 2. Merge from sessionStorage (for live preview/full photoUrl of current session uploads)
             try {
-                const sessionRx = JSON.parse(sessionStorage.getItem('jaya_session_prescriptions') || '[]');
+                const sessionRx = JSON.parse(sessionStorage.getItem('medicare_session_prescriptions') || sessionStorage.getItem('jaya_session_prescriptions') || '[]');
                 if (Array.isArray(sessionRx)) {
                     sessionRx.map(mapRx).forEach(r => {
                         if (r && r.id) {
@@ -188,10 +189,12 @@ export default function Dashboard() {
         loadDashboardData();
 
         const handleSync = () => loadDashboardData();
+        window.addEventListener('medicare_prescription_update', handleSync);
         window.addEventListener('jaya_prescription_update', handleSync);
         window.addEventListener('storage', handleSync);
 
         return () => {
+            window.removeEventListener('medicare_prescription_update', handleSync);
             window.removeEventListener('jaya_prescription_update', handleSync);
             window.removeEventListener('storage', handleSync);
         };
@@ -205,7 +208,7 @@ export default function Dashboard() {
         try {
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
-                if (key && (key.startsWith('jaya_prescriptions_') || key === 'jaya_all_prescriptions')) {
+                if (key && (key.startsWith('medicare_prescriptions_') || key.startsWith('jaya_prescriptions_') || key === 'medicare_all_prescriptions' || key === 'jaya_all_prescriptions')) {
                     const items = JSON.parse(localStorage.getItem(key) || '[]');
                     if (Array.isArray(items)) {
                         const updatedItems = items.map(p => 
@@ -219,9 +222,9 @@ export default function Dashboard() {
 
         // 2. Update sessionStorage
         try {
-            const sessionRx = JSON.parse(sessionStorage.getItem('jaya_session_prescriptions') || '[]');
+            const sessionRx = JSON.parse(sessionStorage.getItem('medicare_session_prescriptions') || sessionStorage.getItem('jaya_session_prescriptions') || '[]');
             const updatedSession = sessionRx.map(p => (p.id === id || p.rxId === id || p._id === id) ? { ...p, status: 'APPROVED' } : p);
-            sessionStorage.setItem('jaya_session_prescriptions', JSON.stringify(updatedSession));
+            sessionStorage.setItem('medicare_session_prescriptions', JSON.stringify(updatedSession));
         } catch (_) {}
 
         // 3. Call backend API
@@ -236,6 +239,7 @@ export default function Dashboard() {
             console.warn('API approve prescription warning:', err.message);
         }
 
+        window.dispatchEvent(new Event('medicare_prescription_update'));
         window.dispatchEvent(new Event('jaya_prescription_update'));
         window.dispatchEvent(new Event('storage'));
 
@@ -254,7 +258,7 @@ export default function Dashboard() {
         try {
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
-                if (key && (key.startsWith('jaya_prescriptions_') || key === 'jaya_all_prescriptions')) {
+                if (key && (key.startsWith('medicare_prescriptions_') || key.startsWith('jaya_prescriptions_') || key === 'medicare_all_prescriptions' || key === 'jaya_all_prescriptions')) {
                     const items = JSON.parse(localStorage.getItem(key) || '[]');
                     if (Array.isArray(items)) {
                         const updatedItems = items.map(p => 
@@ -268,9 +272,9 @@ export default function Dashboard() {
 
         // 2. Update sessionStorage
         try {
-            const sessionRx = JSON.parse(sessionStorage.getItem('jaya_session_prescriptions') || '[]');
+            const sessionRx = JSON.parse(sessionStorage.getItem('medicare_session_prescriptions') || sessionStorage.getItem('jaya_session_prescriptions') || '[]');
             const updatedSession = sessionRx.map(p => (p.id === id || p.rxId === id || p._id === id) ? { ...p, status: 'REJECTED' } : p);
-            sessionStorage.setItem('jaya_session_prescriptions', JSON.stringify(updatedSession));
+            sessionStorage.setItem('medicare_session_prescriptions', JSON.stringify(updatedSession));
         } catch (_) {}
 
         // 3. Call backend API
@@ -285,6 +289,7 @@ export default function Dashboard() {
             console.warn('API reject prescription warning:', err.message);
         }
 
+        window.dispatchEvent(new Event('medicare_prescription_update'));
         window.dispatchEvent(new Event('jaya_prescription_update'));
         window.dispatchEvent(new Event('storage'));
 
@@ -305,19 +310,19 @@ export default function Dashboard() {
         const updated = agentQueue.map(p => p.id === id ? { ...p, agentSuggestion: textToSave } : p);
         setAgentQueue(updated);
         try {
-            localStorage.setItem('jaya_all_prescriptions', JSON.stringify(updated));
+            localStorage.setItem('medicare_all_prescriptions', JSON.stringify(updated));
         } catch (_) {}
 
         try {
-            const sessionRx = JSON.parse(sessionStorage.getItem('jaya_session_prescriptions') || '[]');
+            const sessionRx = JSON.parse(sessionStorage.getItem('medicare_session_prescriptions') || sessionStorage.getItem('jaya_session_prescriptions') || '[]');
             const updatedSession = sessionRx.map(p => (p.id === id || p.rxId === id) ? { ...p, agentSuggestion: textToSave } : p);
-            sessionStorage.setItem('jaya_session_prescriptions', JSON.stringify(updatedSession));
+            sessionStorage.setItem('medicare_session_prescriptions', JSON.stringify(updatedSession));
         } catch (_) {}
 
         const target = agentQueue.find(p => p.id === id);
         if (target) {
             if (target.userEmail) {
-                const emailKey = `jaya_prescriptions_${target.userEmail.toLowerCase()}`;
+                const emailKey = `medicare_prescriptions_${target.userEmail.toLowerCase()}`;
                 try {
                     const targetUserRx = JSON.parse(localStorage.getItem(emailKey) || '[]');
                     const updatedUserRx = targetUserRx.map(p => p.id === id ? { ...p, agentSuggestion: textToSave } : p);
@@ -325,7 +330,7 @@ export default function Dashboard() {
                 } catch (_) {}
             }
             if (target.userId) {
-                const idKey = `jaya_prescriptions_${target.userId}`;
+                const idKey = `medicare_prescriptions_${target.userId}`;
                 try {
                     const targetIdRx = JSON.parse(localStorage.getItem(idKey) || '[]');
                     const updatedIdRx = targetIdRx.map(p => p.id === id ? { ...p, agentSuggestion: textToSave } : p);
@@ -334,6 +339,7 @@ export default function Dashboard() {
             }
         }
 
+        window.dispatchEvent(new Event('medicare_prescription_update'));
         window.dispatchEvent(new Event('jaya_prescription_update'));
         window.dispatchEvent(new Event('storage'));
 
@@ -380,7 +386,7 @@ export default function Dashboard() {
 
     return (
         <div className="min-h-screen">
-            <Seo title={`${user.name} | Dashboard - Jaya Medical Store`} description="Manage your pharmacy orders, prescriptions, and account settings." />
+            <Seo title={`${user.name} | Dashboard - MediCare`} description="Manage your pharmacy orders, prescriptions, and account settings." />
 
             <div className="flex min-h-screen">
                 {/* ── Mobile Sidebar Toggle ── */}

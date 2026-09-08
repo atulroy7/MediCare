@@ -161,7 +161,7 @@ export default function Footer() {
             {/* Bottom bar */}
             <div className="border-t border-border bg-bg">
                 <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-6 text-xs text-text-muted sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-                    <p>© {year} Jaya Medical Store. All rights reserved.</p>
+                    <p>© {year} MediCare. All rights reserved.</p>
                     <p className="flex items-center gap-1">
                         Built for reliable pharmacy care <Icon name="Heart" className="w-3 h-3 text-red-500 fill-current" />
                     </p>

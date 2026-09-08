@@ -21,7 +21,7 @@ const IN_MEMORY_USERS = [
         password: 'password123',
         role: 'agent',
         phone: '+91 9123456789',
-        address: 'Jaya Medical Store, Store #42, Mumbai',
+        address: 'MediCare, Store #42, Mumbai',
         agentCode: 'AG-8849',
         licenseNumber: 'MH-PHARM-2024-9918'
     }
@@ -38,7 +38,7 @@ export const adminLogin = asyncHandler(async (req, res) => {
 
     const adminUsername = process.env.ADMIN_USERNAME || 'admin';
     const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
-    const jwtSecret = process.env.JWT_SECRET || 'jaya_medical_store_super_secret_jwt_key_2026';
+    const jwtSecret = process.env.JWT_SECRET || 'medicare_super_secret_jwt_key_2026';
 
     if (username !== adminUsername || password !== adminPassword) {
         throw Errors.unauthorized('Invalid admin credentials');
@@ -64,7 +64,7 @@ export const adminLogin = asyncHandler(async (req, res) => {
  */
 export const loginUser = asyncHandler(async (req, res) => {
     const { email, password, role = 'customer' } = req.body;
-    const jwtSecret = process.env.JWT_SECRET || 'jaya_medical_store_super_secret_jwt_key_2026';
+    const jwtSecret = process.env.JWT_SECRET || 'medicare_super_secret_jwt_key_2026';
 
     let user = null;
     const cleanEmail = email ? email.toLowerCase().trim() : '';
@@ -149,7 +149,7 @@ export const loginUser = asyncHandler(async (req, res) => {
  */
 export const registerUser = asyncHandler(async (req, res) => {
     const { name, email, password, role = 'customer', phone, address, agentCode, licenseNumber } = req.body;
-    const jwtSecret = process.env.JWT_SECRET || 'jaya_medical_store_super_secret_jwt_key_2026';
+    const jwtSecret = process.env.JWT_SECRET || 'medicare_super_secret_jwt_key_2026';
     const cleanEmail = email ? email.toLowerCase().trim() : '';
     const cleanPhone = phone ? phone.replace(/\D/g, '').trim() : '';
 
@@ -260,7 +260,7 @@ export const getCurrentUser = asyncHandler(async (req, res) => {
     }
 
     const token = authHeader.split(' ')[1];
-    const jwtSecret = process.env.JWT_SECRET || 'jaya_medical_store_super_secret_jwt_key_2026';
+    const jwtSecret = process.env.JWT_SECRET || 'medicare_super_secret_jwt_key_2026';
 
     try {
         const decoded = jwt.verify(token, jwtSecret);

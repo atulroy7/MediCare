@@ -37,15 +37,15 @@ export function readPrescriptionsForUser(userObj) {
     };
 
     try {
-        const emailRx = JSON.parse(localStorage.getItem(`jaya_prescriptions_${cleanEmail}`) || '[]');
-        const globalRx = JSON.parse(localStorage.getItem('jaya_all_prescriptions') || '[]');
+        const emailRx = JSON.parse(localStorage.getItem(`medicare_prescriptions_${cleanEmail}`) || localStorage.getItem(`jaya_prescriptions_${cleanEmail}`) || '[]');
+        const globalRx = JSON.parse(localStorage.getItem('medicare_all_prescriptions') || localStorage.getItem('jaya_all_prescriptions') || '[]');
 
         if (Array.isArray(emailRx)) emailRx.forEach(addRxItem);
         if (Array.isArray(globalRx)) globalRx.forEach(addRxItem);
     } catch (_) {}
 
     try {
-        const sessionRx = JSON.parse(sessionStorage.getItem('jaya_session_prescriptions') || '[]');
+        const sessionRx = JSON.parse(sessionStorage.getItem('medicare_session_prescriptions') || sessionStorage.getItem('jaya_session_prescriptions') || '[]');
         if (Array.isArray(sessionRx)) sessionRx.forEach(addRxItem);
     } catch (_) {}
 
@@ -83,7 +83,7 @@ export default function Cart() {
             const res = await fetch(`${backendUrl}/prescriptions/my-prescriptions?email=${encodeURIComponent(cleanEmail)}`);
             const data = await res.json();
             if (res.ok && data.success && Array.isArray(data.prescriptions) && data.prescriptions.length > 0) {
-                const key = `jaya_prescriptions_${cleanEmail}`;
+                const key = `medicare_prescriptions_${cleanEmail}`;
                 const apiMapped = data.prescriptions.map(p => ({
                     id: p.rxId || p.id || p._id,
                     rxId: p.rxId || p.id || p._id,
@@ -126,10 +126,14 @@ export default function Cart() {
         const keysToDelete = [];
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
-            if (key && key.startsWith('jaya_')) keysToDelete.push(key);
+            if (key && (key.startsWith('medicare_') || key.startsWith('jaya_'))) keysToDelete.push(key);
         }
         keysToDelete.forEach(k => localStorage.removeItem(k));
-        try { sessionStorage.removeItem('jaya_session_prescriptions'); } catch (_) {}
+        try { 
+            sessionStorage.removeItem('medicare_session_prescriptions');
+            sessionStorage.removeItem('jaya_session_prescriptions');
+        } catch (_) {}
+        window.dispatchEvent(new Event('medicare_prescription_update'));
         window.dispatchEvent(new Event('jaya_prescription_update'));
         toast.success('All prescription data cleared. Upload a new prescription to start fresh.', { duration: 5000, icon: '🗑️' });
     };
@@ -137,9 +141,11 @@ export default function Cart() {
     useEffect(() => {
         refreshRxStatus();
         const handleSync = () => refreshRxStatus();
+        window.addEventListener('medicare_prescription_update', handleSync);
         window.addEventListener('jaya_prescription_update', handleSync);
         window.addEventListener('storage', handleSync);
         return () => {
+            window.removeEventListener('medicare_prescription_update', handleSync);
             window.removeEventListener('jaya_prescription_update', handleSync);
             window.removeEventListener('storage', handleSync);
         };
@@ -149,14 +155,15 @@ export default function Cart() {
     const isFreeDelivery = subtotal > 999 || subtotal === 0 || appliedPromo === 'FREEDEL';
     const deliveryCharge = isFreeDelivery ? 0 : 49;
     const taxes = Math.round(subtotal * 0.05);
-    const discount = appliedPromo === 'JAYA10' ? Math.round(subtotal * 0.1) : 0;
+    const isTenOff = appliedPromo === 'MEDICARE10' || appliedPromo === 'JAYA10';
+    const discount = isTenOff ? Math.round(subtotal * 0.1) : 0;
     const total = Math.max(0, subtotal + deliveryCharge + taxes - discount);
 
     const applyPromo = () => {
         const code = promoCode.trim().toUpperCase();
-        if (code === 'JAYA10') {
-            setAppliedPromo('JAYA10');
-            toast.success('Promo code JAYA10 applied — 10% OFF!');
+        if (code === 'MEDICARE10' || code === 'JAYA10') {
+            setAppliedPromo('MEDICARE10');
+            toast.success('Promo code MEDICARE10 applied — 10% OFF!');
         } else if (code === 'FREEDEL') {
             setAppliedPromo('FREEDEL');
             toast.success('Promo code FREEDEL applied — Free Delivery!');
@@ -193,7 +200,7 @@ export default function Cart() {
             const res = await fetch(`${backendUrl}/prescriptions/my-prescriptions?email=${encodeURIComponent(cleanEmail)}`);
             const data = await res.json();
             if (res.ok && data.success && Array.isArray(data.prescriptions) && data.prescriptions.length > 0) {
-                const key = `jaya_prescriptions_${cleanEmail}`;
+                const key = `medicare_prescriptions_${cleanEmail}`;
                 const apiMapped = data.prescriptions.map(p => ({
                     id: p.rxId || p._id || p.id,
                     rxId: p.rxId || p._id || p.id,
@@ -264,8 +271,9 @@ export default function Cart() {
             prescriptionId: approvedRx?.id || null
         };
 
-        const userOrderKey = `jaya_orders_${user.id || cleanEmail}`;
-        const existingOrders = JSON.parse(localStorage.getItem(userOrderKey) || '[]');
+        const userOrderKey = `medicare_orders_${user.id || cleanEmail}`;
+        const legacyUserOrderKey = `jaya_orders_${user.id || cleanEmail}`;
+        const existingOrders = JSON.parse(localStorage.getItem(userOrderKey) || localStorage.getItem(legacyUserOrderKey) || '[]');
         localStorage.setItem(userOrderKey, JSON.stringify([newOrder, ...existingOrders]));
 
         // Fulfill / consume the approved prescription so future orders require a new prescription approval
@@ -273,26 +281,27 @@ export default function Cart() {
             const rxId = approvedRx.id;
             try {
                 // 1. Update email storage
-                const emailKey = `jaya_prescriptions_${cleanEmail}`;
-                const currentEmailRx = JSON.parse(localStorage.getItem(emailKey) || '[]');
+                const emailKey = `medicare_prescriptions_${cleanEmail}`;
+                const legacyEmailKey = `jaya_prescriptions_${cleanEmail}`;
+                const currentEmailRx = JSON.parse(localStorage.getItem(emailKey) || localStorage.getItem(legacyEmailKey) || '[]');
                 const updatedEmailRx = currentEmailRx.map(p => 
                     (p.id === rxId || p.rxId === rxId || p._id === rxId) ? { ...p, status: 'FULFILLED', usedInOrder: newOrder.id } : p
                 );
                 localStorage.setItem(emailKey, JSON.stringify(updatedEmailRx));
 
                 // 2. Update global list
-                const currentAllRx = JSON.parse(localStorage.getItem('jaya_all_prescriptions') || '[]');
+                const currentAllRx = JSON.parse(localStorage.getItem('medicare_all_prescriptions') || localStorage.getItem('jaya_all_prescriptions') || '[]');
                 const updatedAllRx = currentAllRx.map(p => 
                     (p.id === rxId || p.rxId === rxId || p._id === rxId) ? { ...p, status: 'FULFILLED', usedInOrder: newOrder.id } : p
                 );
-                localStorage.setItem('jaya_all_prescriptions', JSON.stringify(updatedAllRx));
+                localStorage.setItem('medicare_all_prescriptions', JSON.stringify(updatedAllRx));
 
                 // 3. Update session storage
-                const sessionRx = JSON.parse(sessionStorage.getItem('jaya_session_prescriptions') || '[]');
+                const sessionRx = JSON.parse(sessionStorage.getItem('medicare_session_prescriptions') || sessionStorage.getItem('jaya_session_prescriptions') || '[]');
                 const updatedSession = sessionRx.map(p => 
                     (p.id === rxId || p.rxId === rxId || p._id === rxId) ? { ...p, status: 'FULFILLED', usedInOrder: newOrder.id } : p
                 );
-                sessionStorage.setItem('jaya_session_prescriptions', JSON.stringify(updatedSession));
+                sessionStorage.setItem('medicare_session_prescriptions', JSON.stringify(updatedSession));
 
                 // 4. Update backend API
                 const backendUrl = getApiBaseUrl();
@@ -303,6 +312,7 @@ export default function Cart() {
                 }).catch(() => {});
             } catch (_) {}
 
+            window.dispatchEvent(new Event('medicare_prescription_update'));
             window.dispatchEvent(new Event('jaya_prescription_update'));
             window.dispatchEvent(new Event('storage'));
         }
@@ -316,7 +326,7 @@ export default function Cart() {
     if (!items.length) {
         return (
             <>
-                <Seo title="Cart | Jaya Medical Store" description="Review the items in your pharmacy cart." />
+                <Seo title="Cart | MediCare" description="Review the items in your pharmacy cart." />
                 <section className="min-h-[calc(100vh-72px)] bg-lofi relative flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-bg/80 dark:bg-bg/90 backdrop-blur-[50px] z-0" />
                     
@@ -353,7 +363,7 @@ export default function Cart() {
 
     return (
         <>
-            <Seo title="Cart | Jaya Medical Store" description="Review items, apply a promo code, and proceed to checkout." />
+            <Seo title="Cart | MediCare" description="Review items, apply a promo code, and proceed to checkout." />
             
             <div className="min-h-[calc(100vh-72px)] bg-surface relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-1/2 h-96 bg-primary/10 blur-[100px] pointer-events-none" />
@@ -480,7 +490,7 @@ export default function Cart() {
                                     <SummaryRow label="GST (5%)" value={`₹${taxes}`} />
 
                                     {discount > 0 && (
-                                        <SummaryRow label="Promo discount (JAYA10)" value={`-₹${discount}`} valueClass="text-green-500 font-medium" />
+                                        <SummaryRow label="Promo discount (MEDICARE10)" value={`-₹${discount}`} valueClass="text-green-500 font-medium" />
                                     )}
                                     {appliedPromo === 'FREEDEL' && (
                                         <SummaryRow label="Free delivery (FREEDEL)" value="-₹49 saved" valueClass="text-green-500 font-medium" />
@@ -508,7 +518,7 @@ export default function Cart() {
                                                 <Icon name="Tag" className="w-4 h-4" />
                                                 <span className="text-sm font-bold tracking-wider">{appliedPromo}</span>
                                                 <span className="text-xs text-green-600/70 dark:text-green-400/70">
-                                                    {appliedPromo === 'JAYA10' ? '— 10% OFF' : '— Free Delivery'}
+                                                    {(appliedPromo === 'MEDICARE10' || appliedPromo === 'JAYA10') ? '— 10% OFF' : '— Free Delivery'}
                                                 </span>
                                             </div>
                                             <button
@@ -524,7 +534,7 @@ export default function Cart() {
                                             <input
                                                 value={promoCode}
                                                 onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                                                placeholder="Enter code (e.g. JAYA10)"
+                                                placeholder="Enter code (e.g. MEDICARE10)"
                                                 className="w-full rounded-xl border border-border bg-bg px-4 py-3 outline-none focus:border-primary transition-colors text-sm placeholder:text-text-muted/60"
                                                 onKeyDown={(e) => e.key === 'Enter' && applyPromo()}
                                             />
@@ -542,10 +552,10 @@ export default function Cart() {
                                         <div className="mt-2.5 flex flex-wrap gap-2">
                                             <button
                                                 type="button"
-                                                onClick={() => { setPromoCode('JAYA10'); }}
+                                                onClick={() => { setPromoCode('MEDICARE10'); }}
                                                 className="text-xs px-3 py-1 rounded-full border border-border text-text-muted hover:border-primary hover:text-primary transition-colors"
                                             >
-                                                🏷️ JAYA10 — 10% off
+                                                🏷️ MEDICARE10 — 10% off
                                             </button>
                                             <button
                                                 type="button"

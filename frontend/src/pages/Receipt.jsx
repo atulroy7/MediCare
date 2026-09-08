@@ -18,8 +18,9 @@ export default function Receipt() {
             return;
         }
 
-        const userOrderKey = `jaya_orders_${user.id || user.email}`;
-        const orders = JSON.parse(localStorage.getItem(userOrderKey) || '[]');
+        const userOrderKey = `medicare_orders_${user.id || user.email}`;
+        const legacyUserOrderKey = `jaya_orders_${user.id || user.email}`;
+        const orders = JSON.parse(localStorage.getItem(userOrderKey) || localStorage.getItem(legacyUserOrderKey) || '[]');
         
         let found = orders.find(o => o.id === orderId || o._id === orderId);
 
@@ -82,11 +83,11 @@ export default function Receipt() {
         if (user) {
             const cleanEmail = (user.email || '').toLowerCase();
             try {
-                const emailRx = JSON.parse(localStorage.getItem(`jaya_prescriptions_${cleanEmail}`) || '[]');
+                const emailRx = JSON.parse(localStorage.getItem(`medicare_prescriptions_${cleanEmail}`) || localStorage.getItem(`jaya_prescriptions_${cleanEmail}`) || '[]');
                 const foundRx = emailRx.find(r => r && r.address && r.address.trim().length > 0);
                 if (foundRx && foundRx.address) return foundRx.address;
 
-                const globalRx = JSON.parse(localStorage.getItem('jaya_all_prescriptions') || '[]');
+                const globalRx = JSON.parse(localStorage.getItem('medicare_all_prescriptions') || localStorage.getItem('jaya_all_prescriptions') || '[]');
                 const foundGlobal = globalRx.find(r => r && r.userEmail && r.userEmail.toLowerCase() === cleanEmail && r.address);
                 if (foundGlobal && foundGlobal.address) return foundGlobal.address;
             } catch (_) {}
@@ -216,7 +217,7 @@ export default function Receipt() {
                                 </div>
                                 {discount > 0 && (
                                     <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
-                                        <span>Promo Discount (JAYA10):</span>
+                                        <span>Promo Discount ({order.promoCode || 'MEDICARE10'}):</span>
                                         <span className="font-mono font-semibold">-₹{discount}</span>
                                     </div>
                                 )}

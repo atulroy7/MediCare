@@ -1,5 +1,5 @@
 /**
- * Centralized API Service for Jaya Medical Store.
+ * Centralized API Service for MediCare.
  * Handles API communication with Express backend with automatic base URL, header configuration, and error parsing.
  */
 
@@ -23,7 +23,7 @@ export const getApiBaseUrl = () => {
 const API_BASE_URL = getApiBaseUrl();
 
 async function request(endpoint, options = {}) {
-    const token = localStorage.getItem('jaya_auth_token');
+    const token = localStorage.getItem('medicare_auth_token') || localStorage.getItem('medicare_token') || localStorage.getItem('jaya_auth_token') || localStorage.getItem('jaya_token');
 
     const headers = {
         'Content-Type': 'application/json',

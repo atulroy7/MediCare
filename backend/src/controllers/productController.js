@@ -16,7 +16,7 @@ export const createProduct = asyncHandler(async (req, res) => {
     const b64 = Buffer.from(req.file.buffer).toString('base64');
     let dataURI = 'data:' + req.file.mimetype + ';base64,' + b64;
     const uploadRes = await cloudinary.uploader.upload(dataURI, {
-        folder: 'jaya_medical/products'
+        folder: 'medicare/products'
     });
 
     const productData = {
@@ -145,7 +145,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
                 // Extract public ID from URL
                 const urlParts = product.image_url.split('/');
                 const filename = urlParts[urlParts.length - 1];
-                const publicId = `jaya_medical/products/${filename.split('.')[0]}`;
+                const publicId = `medicare/products/${filename.split('.')[0]}`;
                 await cloudinary.uploader.destroy(publicId);
             } catch (err) {
                 console.error('Failed to delete old image from Cloudinary:', err);
@@ -156,7 +156,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
         const b64 = Buffer.from(req.file.buffer).toString('base64');
         let dataURI = 'data:' + req.file.mimetype + ';base64,' + b64;
         const uploadRes = await cloudinary.uploader.upload(dataURI, {
-            folder: 'jaya_medical/products'
+            folder: 'medicare/products'
         });
 
         updateData.image_url = uploadRes.secure_url;
@@ -194,7 +194,7 @@ export const deleteProduct = asyncHandler(async (req, res) => {
         try {
             const urlParts = product.image_url.split('/');
             const filename = urlParts[urlParts.length - 1];
-            const publicId = `jaya_medical/products/${filename.split('.')[0]}`;
+            const publicId = `medicare/products/${filename.split('.')[0]}`;
             await cloudinary.uploader.destroy(publicId);
         } catch (err) {
             console.error('Failed to delete image from Cloudinary:', err);

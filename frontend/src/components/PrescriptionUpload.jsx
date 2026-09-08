@@ -165,39 +165,41 @@ export default function PrescriptionUpload() {
             const rxItemCompact = { ...rxItem, photoUrl: null };
 
             // --- PRIMARY: Save to localStorage with correct email key ---
-            const emailKey = `jaya_prescriptions_${cleanEmail}`;
+            const emailKey = `medicare_prescriptions_${cleanEmail}`;
+            const legacyEmailKey = `jaya_prescriptions_${cleanEmail}`;
             try {
-                const existingEmailRx = JSON.parse(localStorage.getItem(emailKey) || '[]');
+                const existingEmailRx = JSON.parse(localStorage.getItem(emailKey) || localStorage.getItem(legacyEmailKey) || '[]');
                 const updatedEmailRx = [rxItemFull, ...existingEmailRx.filter(r => r.id !== rxItem.id)];
                 localStorage.setItem(emailKey, JSON.stringify(updatedEmailRx));
             } catch (e1) {
                 // Full DataURL too large — store compact version
                 console.warn('Quota hit saving full image for email key; saving compact:', e1.message);
                 try {
-                    const existingEmailRx = JSON.parse(localStorage.getItem(emailKey) || '[]');
+                    const existingEmailRx = JSON.parse(localStorage.getItem(emailKey) || localStorage.getItem(legacyEmailKey) || '[]');
                     localStorage.setItem(emailKey, JSON.stringify([rxItemCompact, ...existingEmailRx.filter(r => r.id !== rxItem.id)]));
                 } catch (_) {}
             }
 
             // --- SECONDARY: Update the global all-prescriptions list ---
             try {
-                const globalRx = JSON.parse(localStorage.getItem('jaya_all_prescriptions') || '[]');
-                localStorage.setItem('jaya_all_prescriptions', JSON.stringify([rxItemFull, ...globalRx.filter(r => r.id !== rxItem.id)]));
+                const globalRx = JSON.parse(localStorage.getItem('medicare_all_prescriptions') || localStorage.getItem('jaya_all_prescriptions') || '[]');
+                localStorage.setItem('medicare_all_prescriptions', JSON.stringify([rxItemFull, ...globalRx.filter(r => r.id !== rxItem.id)]));
             } catch (e2) {
                 console.warn('Quota hit saving full image to global list; saving compact:', e2.message);
                 try {
-                    const globalRx = JSON.parse(localStorage.getItem('jaya_all_prescriptions') || '[]');
-                    localStorage.setItem('jaya_all_prescriptions', JSON.stringify([rxItemCompact, ...globalRx.filter(r => r.id !== rxItem.id)]));
+                    const globalRx = JSON.parse(localStorage.getItem('medicare_all_prescriptions') || localStorage.getItem('jaya_all_prescriptions') || '[]');
+                    localStorage.setItem('medicare_all_prescriptions', JSON.stringify([rxItemCompact, ...globalRx.filter(r => r.id !== rxItem.id)]));
                 } catch (_) {}
             }
 
             // Also keep full version in sessionStorage so agent/customer can view image this session
             try {
-                const sessionRx = JSON.parse(sessionStorage.getItem('jaya_session_prescriptions') || '[]');
-                sessionStorage.setItem('jaya_session_prescriptions', JSON.stringify([rxItemFull, ...sessionRx.filter(r => r.id !== rxItem.id)]));
+                const sessionRx = JSON.parse(sessionStorage.getItem('medicare_session_prescriptions') || sessionStorage.getItem('jaya_session_prescriptions') || '[]');
+                sessionStorage.setItem('medicare_session_prescriptions', JSON.stringify([rxItemFull, ...sessionRx.filter(r => r.id !== rxItem.id)]));
             } catch (_) { /* sessionStorage full */ }
 
             // Trigger real-time sync event
+            window.dispatchEvent(new Event('medicare_prescription_update'));
             window.dispatchEvent(new Event('jaya_prescription_update'));
             window.dispatchEvent(new Event('storage'));
 

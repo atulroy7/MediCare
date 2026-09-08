@@ -193,7 +193,7 @@ export default function PrescriptionDetailModal({ selectedRx, onClose, onApprove
                                             <Icon name="Stethoscope" className="w-4 h-4" />
                                             Licensed Pharmacist Clinical Advice:
                                         </div>
-                                        <p className="text-xs text-text italic leading-relaxed">{selectedRx.agentSuggestion}</p>
+                                        <p className="text-xs text-text font-bold leading-relaxed">{selectedRx.agentSuggestion}</p>
                                     </div>
                                 )
                             )}

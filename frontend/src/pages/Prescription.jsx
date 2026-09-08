@@ -58,9 +58,9 @@ export default function Prescription() {
 
         // Load from localStorage
         try {
-            const globalRx = JSON.parse(localStorage.getItem('jaya_all_prescriptions') || '[]');
-            const emailKeyRx = JSON.parse(localStorage.getItem(`jaya_prescriptions_${cleanEmail}`) || '[]');
-            const idKeyRx = user.id ? JSON.parse(localStorage.getItem(`jaya_prescriptions_${user.id}`) || '[]') : [];
+            const globalRx = JSON.parse(localStorage.getItem('medicare_all_prescriptions') || localStorage.getItem('jaya_all_prescriptions') || '[]');
+            const emailKeyRx = JSON.parse(localStorage.getItem(`medicare_prescriptions_${cleanEmail}`) || localStorage.getItem(`jaya_prescriptions_${cleanEmail}`) || '[]');
+            const idKeyRx = user.id ? JSON.parse(localStorage.getItem(`medicare_prescriptions_${user.id}`) || localStorage.getItem(`jaya_prescriptions_${user.id}`) || '[]') : [];
 
             [...globalRx.filter(r => r.userEmail && r.userEmail.toLowerCase() === cleanEmail), ...emailKeyRx, ...idKeyRx]
                 .forEach(r => { if (r && r.id) rxMap.set(r.id, r); });
@@ -68,7 +68,7 @@ export default function Prescription() {
 
         // Merge sessionStorage (has full DataURLs for current session)
         try {
-            const sessionRx = JSON.parse(sessionStorage.getItem('jaya_session_prescriptions') || '[]');
+            const sessionRx = JSON.parse(sessionStorage.getItem('medicare_session_prescriptions') || sessionStorage.getItem('jaya_session_prescriptions') || '[]');
             sessionRx.forEach(r => {
                 if (r && r.id) {
                     const existing = rxMap.get(r.id);
@@ -89,9 +89,11 @@ export default function Prescription() {
     useEffect(() => {
         loadPrescriptions();
         const handleSync = () => loadPrescriptions();
+        window.addEventListener('medicare_prescription_update', handleSync);
         window.addEventListener('jaya_prescription_update', handleSync);
         window.addEventListener('storage', handleSync);
         return () => {
+            window.removeEventListener('medicare_prescription_update', handleSync);
             window.removeEventListener('jaya_prescription_update', handleSync);
             window.removeEventListener('storage', handleSync);
         };
@@ -100,7 +102,7 @@ export default function Prescription() {
     return (
         <>
             <Seo
-                title="Upload Prescription | Jaya Medical Store"
+                title="Upload Prescription | MediCare"
                 description="Upload a prescription for medicines that require pharmacist review before dispatch."
             />
 
@@ -115,7 +117,7 @@ export default function Prescription() {
                     >
                         <span className="kicker justify-center">Secure Upload</span>
                         <h1 className="display-heading !mb-4">
-                            Send us your <span className="text-primary italic font-normal">prescription</span>
+                            Send us your <span className="text-primary font-bold">prescription</span>
                         </h1>
                         <p className="mx-auto max-w-xl text-lg text-text-muted">
                             Upload your valid medical prescription for swift processing by our clinical pharmacists. We ensure the highest standards of data privacy and medical accuracy.
@@ -293,7 +295,7 @@ export default function Prescription() {
                                                                     <Icon name="Stethoscope" className="w-3.5 h-3.5" />
                                                                     Pharmacist Advice
                                                                 </div>
-                                                                <p className="text-[11px] text-text italic leading-relaxed">{rx.agentSuggestion}</p>
+                                                                <p className="text-[11px] text-text font-bold leading-relaxed">{rx.agentSuggestion}</p>
                                                             </div>
                                                         )}
 

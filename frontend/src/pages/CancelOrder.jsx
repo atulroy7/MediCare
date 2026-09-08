@@ -6,7 +6,7 @@ import { storeInfo } from '../data/products';
 export default function CancelOrder() {
     return (
         <>
-            <Seo title="Cancellation & Refund Policy" description="Order cancellation and refund policy for Jaya Medical Store." />
+            <Seo title="Cancellation & Refund Policy" description="Order cancellation and refund policy for MediCare." />
 
             <main className="bg-surface min-h-[calc(100vh-72px)] relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-1/3 h-[400px] bg-primary/5 blur-[120px] pointer-events-none" />

@@ -4,7 +4,7 @@ import Seo from '../components/Seo';
 export default function TermsConditions() {
     return (
         <>
-            <Seo title="Terms and Conditions" description="Terms and Conditions for Jaya Medical Store." />
+            <Seo title="Terms and Conditions" description="Terms and Conditions for MediCare." />
 
             <main className="bg-surface min-h-[calc(100vh-72px)] relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-1/3 h-[400px] bg-primary/5 blur-[120px] pointer-events-none" />
@@ -33,14 +33,14 @@ export default function TermsConditions() {
                         <section className="space-y-4">
                             <h2 className="font-serif text-2xl font-semibold text-text">1. General</h2>
                             <p className="text-base leading-relaxed text-text-muted">
-                                By accessing and placing an order with Jaya Medical Store, you confirm that you are in agreement with and bound by the terms of service contained in the Terms & Conditions outlined below. These terms apply to the entire website and any email or other type of communication between you and Jaya Medical Store.
+                                By accessing and placing an order with MediCare, you confirm that you are in agreement with and bound by the terms of service contained in the Terms & Conditions outlined below. These terms apply to the entire website and any email or other type of communication between you and MediCare.
                             </p>
                         </section>
 
                         <section className="space-y-4">
                             <h2 className="font-serif text-2xl font-semibold text-text">2. Prescription Medications</h2>
                             <p className="text-base leading-relaxed text-text-muted">
-                                Jaya Medical Store operates in strict compliance with the Drugs and Cosmetics Act. Any order containing prescription medications (Schedule H/H1) will only be processed after a valid prescription from a registered medical practitioner is uploaded and verified by our licensed pharmacists. We reserve the right to cancel any order if the prescription is found to be invalid, expired, or fraudulent.
+                                MediCare operates in strict compliance with the Drugs and Cosmetics Act. Any order containing prescription medications (Schedule H/H1) will only be processed after a valid prescription from a registered medical practitioner is uploaded and verified by our licensed pharmacists. We reserve the right to cancel any order if the prescription is found to be invalid, expired, or fraudulent.
                             </p>
                         </section>
 

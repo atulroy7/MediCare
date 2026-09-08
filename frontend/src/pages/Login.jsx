@@ -34,7 +34,7 @@ export default function Login() {
     if (isAuthenticated && user) {
         return (
             <div className="relative min-h-[80vh] py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
-                <Seo title="Active Session | Jaya Medical Store" description="You are already logged into your account." />
+                <Seo title="Active Session | MediCare" description="You are already logged into your account." />
                 
                 <div className="w-full max-w-lg glass-card p-8 sm:p-10 text-center space-y-6 border border-border shadow-2xl relative z-10">
                     <div className="mx-auto w-16 h-16 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
@@ -181,8 +181,8 @@ export default function Login() {
     return (
         <div className="relative min-h-[85vh] py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
             <Seo 
-                title={`${selectedRole === 'agent' ? 'Medical Agent' : 'Customer'} Login | Jaya Medical Store`}
-                description="Secure access portal for customers and authorized medical agents at Jaya Medical Store."
+                title={`${selectedRole === 'agent' ? 'Medical Agent' : 'Customer'} Login | MediCare`}
+                description="Secure access portal for customers and authorized medical agents at MediCare."
             />
 
             {/* Background Decorative Blobs */}

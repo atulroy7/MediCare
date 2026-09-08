@@ -1,4 +1,4 @@
-# 🎓 Jaya Medical Store - Class Project Presentation Guide
+# 🎓 MediCare - Class Project Presentation Guide
 
 This guide contains everything you need to run, demonstrate, and present this **Full-Stack Pharmacy & Healthcare E-Commerce Platform** smoothly in class.
 
@@ -49,7 +49,7 @@ The app includes instant 1-click demo buttons on the Login page so you can show 
 Follow this 5-minute presentation flow to impress your teacher and classmates:
 
 ### 1. Introduction & Homepage (1 Minute)
-- **What to say**: *"This is Jaya Medical Store, a modern healthcare e-commerce platform built with React, Vite, TailwindCSS, Express.js, and Node.js."*
+- **What to say**: *"This is MediCare, a modern healthcare e-commerce platform built with React, Vite, TailwindCSS, Express.js, and Node.js."*
 - **Action**: 
   - Show the **Floating Glass Capsule Navigation Bar**.
   - Click the **Theme Toggle** (Moon/Sun icon) to show the clean Light Mode (`#E8F4F8` Light Blue Canvas) and Dark Mode (`#0D1B2A` Pitch Navy Canvas).
@@ -66,7 +66,7 @@ Follow this 5-minute presentation flow to impress your teacher and classmates:
 - **Action**:
   - Click **Login** -> Click **"Instant 1-Click Customer Demo"**.
   - Show the customer name (`Rahul Sharma`) appearing in the capsule header.
-  - Add an item to cart and open `/cart` to show tax calculation, promo code (`JAYA10`), and prescription upload callout.
+  - Add an item to cart and open `/cart` to show tax calculation, promo code (`MEDICARE10`), and prescription upload callout.
 
 ### 4. Doctor Prescription Upload & Verification Workflow (1 Minute)
 - **What to say**: *"Under Indian drug regulations, prescription medicines require doctor verification before fulfillment. Customers can upload prescriptions directly."*

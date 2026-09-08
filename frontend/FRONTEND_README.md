@@ -1,6 +1,6 @@
-# Jaya Medical Store Frontend
+# MediCare Frontend
 
-A professional medical and pharma e-commerce frontend for **Jaya Medical Store**, owned by **Madan Mohan Mishra**. This package now sits inside the shared repo with the backend service, so the project is maintained as a single monorepo.
+A professional medical and pharma e-commerce frontend for **MediCare**, owned by **Madan Mohan Mishra**. This package now sits inside the shared repo with the backend service, so the project is maintained as a single monorepo.
 
 ## Live URL
 

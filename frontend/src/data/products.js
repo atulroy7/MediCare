@@ -148,18 +148,18 @@ export const howItWorksSteps = [
 
 export const ownerProfile = {
     name: 'Madan Mohan Mishra',
-    title: 'Proprietor, Jaya Medical Store',
+    title: 'Proprietor, MediCare',
     quote: 'Serving your family with steady advice, authentic products, and careful attention to every order.',
     years: 15,
     bio:
-        'Madan Mohan Mishra has built Jaya Medical Store around one simple idea: a pharmacy should feel accurate, calm, and human. The store balances quick service with careful verification so every customer can order with confidence.',
+        'Madan Mohan Mishra has built MediCare around one simple idea: a pharmacy should feel accurate, calm, and human. The store balances quick service with careful verification so every customer can order with confidence.',
     qualifications: ['Retail pharmacy experience', 'Prescription handling', 'Product guidance and counseling'],
 };
 
 export const storeInfo = {
-    address: 'Jaya Medical Store, Dhawari, Satna, Lamtara, Madhya Pradesh 485001',
+    address: 'MediCare, Dhawari, Satna, Lamtara, Madhya Pradesh 485001',
     phone: '+91 97528 80806',
-    email: 'support@jayamedicalstore.in',
+    email: 'support@medicare.in',
     whatsapp: 'https://wa.me/919752880806',
     hours: 'Monday to Sunday, 8:00 AM to 10:00 PM',
     mapEmbedUrl: 'https://www.google.com/maps?q=24.5556833,80.8192739&z=18&output=embed',
@@ -182,7 +182,7 @@ export const footerLinks = [
 ];
 
 export const milestones = [
-    { year: '2010', title: 'Store opened', text: 'Jaya Medical Store began serving the neighborhood with a small, dependable pharmacy counter.' },
+    { year: '2010', title: 'Store opened', text: 'MediCare began serving the neighborhood with a small, dependable pharmacy counter.' },
     { year: '2016', title: 'Home delivery added', text: 'The store expanded delivery support for recurring medicines and urgent requests.' },
     { year: '2020', title: 'Digital ordering', text: 'Prescription uploads and WhatsApp ordering became part of the daily workflow.' },
     { year: '2026', title: 'Modern online storefront', text: 'The pharmacy now ships with a polished multi-page shopping experience.' },

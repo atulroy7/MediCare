@@ -96,8 +96,8 @@ export default function Products() {
     return (
         <>
             <Seo
-                title={`${category !== 'All' ? category : 'Store Catalog'} | Jaya Medical Store`}
-                description="Browse medicines, vitamins, baby care, personal care, diabetic care, and surgical supplies at Jaya Medical Store."
+                title={`${category !== 'All' ? category : 'Store Catalog'} | MediCare`}
+                description="Browse medicines, vitamins, baby care, personal care, diabetic care, and surgical supplies at MediCare."
             />
 
             {/* Hero header */}
@@ -116,9 +116,9 @@ export default function Products() {
                             </span>
                             <h1 className="display-heading !mb-2">
                                 {category === 'All' ? (
-                                    <>Browse our <span className="text-primary italic font-normal">curated</span> collection</>
+                                    <>Browse our <span className="text-primary font-bold">curated</span> collection</>
                                 ) : (
-                                    <>{category} <span className="text-primary italic font-normal">Selection</span></>
+                                    <>{category} <span className="text-primary font-bold">Selection</span></>
                                 )}
                             </h1>
                             <p className="text-base sm:text-lg text-text-muted mt-2">
