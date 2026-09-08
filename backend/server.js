@@ -6,12 +6,18 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 import { connectDB } from './src/config/db.js';
 import { initFirebase } from './src/config/firebase.js';
 import { connectCloudinary } from './src/config/cloudinary.js';
 import { connectRedis } from './src/config/redis.js';
 import { globalLimiter } from './src/middlewares/rateLimiter.js';
 import { AppError, buildErrorResponse } from './src/utils/errors.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Routes
 import authRoutes from './src/routes/authRoutes.js';
@@ -119,10 +125,22 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/prescriptions', prescriptionRoutes);
 
-// Base route
-app.get('/', (req, res) => {
-    res.send('MediCare API is running...');
-});
+// ─── Frontend Static Assets (Production / Docker Single-Container) ───────────
+const frontendDist = path.resolve(__dirname, '../frontend/dist');
+if (fs.existsSync(frontendDist)) {
+    app.use(express.static(frontendDist));
+    app.get('*', (req, res, next) => {
+        if (req.originalUrl.startsWith('/api')) {
+            return next();
+        }
+        res.sendFile(path.resolve(frontendDist, 'index.html'));
+    });
+} else {
+    // Base route when running backend in standalone/development mode
+    app.get('/', (req, res) => {
+        res.send('MediCare API is running...');
+    });
+}
 
 // ─── Error Handling ───────────────────────────────────────────────────────────
 

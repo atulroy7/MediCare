@@ -1,0 +1,25 @@
+services:
+  # =========================================================================
+  # Option A: Single Full-Stack Web Service (Unified Docker Container)
+  # =========================================================================
+  - type: web
+    name: medicare-fullstack
+    runtime: docker
+    plan: free
+    dockerfilePath: Dockerfile
+    dockerContext: .
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CLIENT_URL
+        value: "*"
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
