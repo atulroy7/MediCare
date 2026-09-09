@@ -116,6 +116,15 @@ export default function PrescriptionUpload() {
                     : 'General Medical Prescription'
             );
 
+            const RX_KEYWORDS = [
+                'amoxicillin', 'augmentin', 'pantocid', 'pantoprazole', 'metformin',
+                'cetzine', 'cetirizine', 'voveran', 'diclofenac', 'amlopin', 'amlodipine',
+                'thyronorm', 'levothyroxine', 'betnesol', 'betamethasone', 'azithral',
+                'azithromycin', 'tramadol', 'antibiotic', 'steroid', 'schedule h'
+            ];
+            const containsRx = (cartItems && cartItems.some(i => i.requiresPrescription)) ||
+                RX_KEYWORDS.some(kw => medicinesSummary.toLowerCase().includes(kw));
+
             // Save to LocalStorage for User Account & Pharmacist Verification Queue
             const rxItem = {
                 id: 'RX-' + Math.floor(1000 + Math.random() * 9000),
@@ -132,7 +141,8 @@ export default function PrescriptionUpload() {
                 photoUrl: photoUrlData,
                 userEmail: cleanEmail,
                 userId: user.id || '',
-                medicinesSummary
+                medicinesSummary,
+                requiresVerification: containsRx
             };
 
             // Send to Backend API to persist in MongoDB Atlas
@@ -152,7 +162,8 @@ export default function PrescriptionUpload() {
                         photoUrl: photoUrlData,
                         userEmail: cleanEmail,
                         userId: user.id || user._id,
-                        medicinesSummary
+                        medicinesSummary,
+                        requiresVerification: containsRx
                     })
                 });
             } catch (apiErr) {
@@ -232,7 +243,7 @@ export default function PrescriptionUpload() {
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-500 mb-4">
                     <Icon name="Lock" className="h-8 w-8" />
                 </div>
-                <h3 className="text-2xl font-serif font-bold text-slate-900 dark:text-white mb-2">
+                <h3 className="text-2xl font-serif font-bold text-text mb-2">
                     Account Login Required
                 </h3>
                 <p className="text-sm text-text-muted max-w-md mx-auto mb-6">

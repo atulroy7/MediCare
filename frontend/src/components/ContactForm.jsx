@@ -51,24 +51,24 @@ export default function ContactForm() {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-5 rounded-[32px] border border-brand-100 bg-white p-6 shadow-soft">
+        <form onSubmit={handleSubmit} className="space-y-5 rounded-[32px] border border-border bg-surface p-6 shadow-sm">
             <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.3em] text-brand-700">Contact form</p>
-                <h2 className="mt-2 font-display text-3xl text-slate-900">Send a message to the store</h2>
+                <p className="text-sm font-bold uppercase tracking-[0.3em] text-primary">Contact form</p>
+                <h2 className="mt-2 font-display text-3xl font-bold text-text">Send a message to the store</h2>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-                <label className="space-y-2 text-sm font-medium text-slate-700">
+                <label className="space-y-2 text-sm font-bold text-text">
                     Name
                     <input
                         name="name"
                         value={form.name}
                         onChange={onChange}
                         required
-                        className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-brand-500"
+                        className="w-full rounded-2xl border border-border bg-bg text-text px-4 py-3 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                     />
                 </label>
-                <label className="space-y-2 text-sm font-medium text-slate-700">
+                <label className="space-y-2 text-sm font-bold text-text">
                     Email
                     <input
                         name="email"
@@ -76,13 +76,13 @@ export default function ContactForm() {
                         onChange={onChange}
                         type="email"
                         required
-                        className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-brand-500"
+                        className="w-full rounded-2xl border border-border bg-bg text-text px-4 py-3 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                     />
                 </label>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-                <label className="space-y-2 text-sm font-medium text-slate-700">
+                <label className="space-y-2 text-sm font-bold text-text">
                     Phone
                     <input
                         name="phone"
@@ -90,19 +90,19 @@ export default function ContactForm() {
                         onChange={onChange}
                         type="tel"
                         required
-                        className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-brand-500"
+                        className="w-full rounded-2xl border border-border bg-bg text-text px-4 py-3 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                     />
                 </label>
-                <label className="space-y-2 text-sm font-medium text-slate-700">
+                <label className="space-y-2 text-sm font-bold text-text">
                     Subject
                     <select
                         name="subject"
                         value={form.subject}
                         onChange={onChange}
-                        className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-brand-500"
+                        className="w-full rounded-2xl border border-border bg-bg text-text px-4 py-3 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                     >
                         {contactSubjects.map((subject) => (
-                            <option key={subject} value={subject}>
+                            <option key={subject} value={subject} className="bg-surface text-text">
                                 {subject}
                             </option>
                         ))}
@@ -110,7 +110,7 @@ export default function ContactForm() {
                 </label>
             </div>
 
-            <label className="space-y-2 text-sm font-medium text-slate-700">
+            <label className="space-y-2 text-sm font-bold text-text">
                 Message
                 <textarea
                     name="message"
@@ -118,14 +118,14 @@ export default function ContactForm() {
                     onChange={onChange}
                     rows="5"
                     required
-                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-brand-500"
+                    className="w-full rounded-2xl border border-border bg-bg text-text px-4 py-3 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
             </label>
 
             <button
                 type="submit"
                 disabled={sending}
-                className="glass-button text-brand-800 disabled:cursor-not-allowed disabled:opacity-70"
+                className="glass-button-primary disabled:cursor-not-allowed disabled:opacity-70"
             >
                 {sending ? 'Sending...' : 'Submit message'}
                 <Icon name="Send" className="h-4 w-4" />

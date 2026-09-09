@@ -22,7 +22,6 @@ export function CartProvider({ children }) {
 
     const [items, setItems] = useState([]);
 
-    // Sync items when user or cart key changes
     useEffect(() => {
         if (typeof window === 'undefined') return;
         try {
@@ -38,7 +37,6 @@ export function CartProvider({ children }) {
         }
     }, [userCartKey, legacyUserCartKey]);
 
-    // Save items to user-specific localStorage key on change
     useEffect(() => {
         if (typeof window === 'undefined') return;
         if (userCartKey) {
@@ -50,7 +48,7 @@ export function CartProvider({ children }) {
         if (!isAuthenticated || !user) {
             toast.error('Please log in or create an account to add items to your cart.', {
                 duration: 4000,
-                icon: '🔒'
+                icon: 'locked',
             });
             navigate('/login', { state: { from: window.location.pathname } });
             return false;
@@ -66,13 +64,19 @@ export function CartProvider({ children }) {
             return [...currentItems, { ...product, quantity }];
         });
 
-        toast.success(`Added ${product.name} to cart!`, { duration: 1000 });
+        if (product.requiresPrescription) {
+            toast.error(
+                `?? ${product.name} is a Schedule H/Rx medicine. A valid doctor prescription approved by our Medical Agent is required before you can checkout.`,
+                { duration: 8000, id: `rx-warn-${product.id}` }
+            );
+        } else {
+            toast.success(`Added ${product.name} to cart!`, { duration: 1000 });
+        }
         return true;
     };
 
     const setItemQuantity = (productId, quantity) => {
         if (quantity < 1) return;
-
         setItems((currentItems) =>
             currentItems.map((item) => (item.id === productId ? { ...item, quantity } : item)),
         );
@@ -99,6 +103,18 @@ export function CartProvider({ children }) {
         [items],
     );
 
+    // True if ANY item in the cart requires a prescription
+    const cartRequiresPrescription = useMemo(
+        () => items.some((item) => item.requiresPrescription === true),
+        [items],
+    );
+
+    // Items in cart that require prescription
+    const cartRxItems = useMemo(
+        () => items.filter((item) => item.requiresPrescription === true),
+        [items],
+    );
+
     const value = {
         items,
         cartProducts,
@@ -108,6 +124,8 @@ export function CartProvider({ children }) {
         setItemQuantity,
         removeFromCart,
         clearCart,
+        cartRequiresPrescription,
+        cartRxItems,
     };
 
     return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

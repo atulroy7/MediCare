@@ -58,7 +58,7 @@ export function readPrescriptionsForUser(userObj) {
 }
 
 export default function Cart() {
-    const { items, setItemQuantity, removeFromCart, clearCart, subtotal } = useCart();
+    const { items, setItemQuantity, removeFromCart, clearCart, subtotal, cartRequiresPrescription, cartRxItems } = useCart();
     const { user, isAuthenticated } = useAuth();
     const navigate = useNavigate();
     const [isPaymentOpen, setIsPaymentOpen] = useState(false);
@@ -75,47 +75,61 @@ export default function Cart() {
         }
 
         const cleanEmail = (user.email || '').toLowerCase().trim();
-        let prescriptions = readPrescriptionsForUser(user);
 
-        // Fetch real-time prescriptions from backend API as source of truth
+        // \u2500\u2500 Use ONLY the live backend API as source of truth for the UI status banner \u2500\u2500
         try {
             const backendUrl = getApiBaseUrl();
             const res = await fetch(`${backendUrl}/prescriptions/my-prescriptions?email=${encodeURIComponent(cleanEmail)}`);
             const data = await res.json();
-            if (res.ok && data.success && Array.isArray(data.prescriptions) && data.prescriptions.length > 0) {
-                const key = `medicare_prescriptions_${cleanEmail}`;
-                const apiMapped = data.prescriptions.map(p => ({
-                    id: p.rxId || p.id || p._id,
-                    rxId: p.rxId || p.id || p._id,
-                    status: p.status,
-                    patient: p.patientName || p.patient,
-                    userEmail: (p.userEmail || cleanEmail).toLowerCase().trim(),
-                    filename: p.filename,
-                    doctor: p.doctor,
-                    address: p.address,
-                    phone: p.phone,
-                    createdAt: p.createdAt
-                }));
-                localStorage.setItem(key, JSON.stringify(apiMapped));
-                prescriptions = readPrescriptionsForUser(user);
+            if (res.ok && data.success && Array.isArray(data.prescriptions)) {
+                // Sort newest first
+                const sorted = [...data.prescriptions].sort((a, b) => {
+                    const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                    const tB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                    return tB - tA;
+                });
+                const latestRx = sorted[0] || null;
+                const hasApproved = Boolean(latestRx && latestRx.status === 'APPROVED');
+                const hasPending = Boolean(latestRx && latestRx.status === 'PENDING_VERIFICATION');
+                const hasRejected = Boolean(latestRx && latestRx.status === 'REJECTED');
+                const isFulfilled = Boolean(latestRx && latestRx.status === 'FULFILLED');
+
+                // Sync to localStorage so rest of app stays consistent
+                if (data.prescriptions.length > 0) {
+                    const key = `medicare_prescriptions_${cleanEmail}`;
+                    const apiMapped = data.prescriptions.map(p => ({
+                        id: p.rxId || p.id || p._id,
+                        rxId: p.rxId || p.id || p._id,
+                        status: p.status,
+                        patient: p.patientName || p.patient,
+                        userEmail: (p.userEmail || cleanEmail).toLowerCase().trim(),
+                        filename: p.filename,
+                        doctor: p.doctor,
+                        address: p.address,
+                        phone: p.phone,
+                        createdAt: p.createdAt
+                    }));
+                    localStorage.setItem(key, JSON.stringify(apiMapped));
+                }
+
+                console.log('[Cart] API rx status:', latestRx ? `${latestRx.rxId || latestRx._id}=${latestRx.status}` : 'none');
+                setRxStatus({ hasApproved, hasPending, hasRejected, isFulfilled, activeRx: latestRx, prescriptionsCount: data.prescriptions.length, loaded: true });
+                return;
             }
         } catch (err) {
             console.warn('[Cart] API rx status fetch warning:', err.message);
         }
 
-        console.log('[Cart] Prescriptions found for user:', prescriptions.map(p => `${p.id}=${p.status}`));
-
-        // Active unfulfilled prescription dictates current eligibility
-        const activeRx = prescriptions.find(rx => rx.status !== 'FULFILLED') || prescriptions[0];
-        const hasApproved = Boolean(activeRx && activeRx.status === 'APPROVED');
-        const hasPending = Boolean(activeRx && activeRx.status === 'PENDING_VERIFICATION');
-        const hasRejected = Boolean(activeRx && activeRx.status === 'REJECTED');
-
+        // API unavailable \u2014 fall back to localStorage but mark as unverified (cannot approve)
+        const prescriptions = readPrescriptionsForUser(user);
+        const latestRx = prescriptions[0];
+        console.log('[Cart] Fallback localStorage rx:', latestRx ? `${latestRx.id}=${latestRx.status}` : 'none');
         setRxStatus({
-            hasApproved,
-            hasPending,
-            hasRejected,
-            activeRx,
+            hasApproved: false, // Never allow approval from stale cache
+            hasPending: Boolean(latestRx),
+            hasRejected: false,
+            isFulfilled: false,
+            activeRx: latestRx,
             prescriptionsCount: prescriptions.length,
             loaded: true,
         });
@@ -191,61 +205,91 @@ export default function Cart() {
             return;
         }
 
-        const cleanEmail = (user.email || '').toLowerCase().trim();
-        let freshPrescriptions = readPrescriptionsForUser(user);
+        // ── Direct OTC Checkout: If NO item requires a prescription, proceed directly to payment
+        if (!cartRequiresPrescription) {
+            setIsPaymentOpen(true);
+            return;
+        }
 
-        // Fetch fresh real-time status from backend API as source of truth
+        const cleanEmail = (user.email || '').toLowerCase().trim();
+
+        // ── STRICT: Use ONLY the live backend API as the source of truth for prescription status.
+        // Never trust localStorage/sessionStorage for the approval decision — it can be stale.
+        let apiLatestRx = null;
+        let apiCallSucceeded = false;
+
         try {
             const backendUrl = getApiBaseUrl();
             const res = await fetch(`${backendUrl}/prescriptions/my-prescriptions?email=${encodeURIComponent(cleanEmail)}`);
             const data = await res.json();
-            if (res.ok && data.success && Array.isArray(data.prescriptions) && data.prescriptions.length > 0) {
-                const key = `medicare_prescriptions_${cleanEmail}`;
-                const apiMapped = data.prescriptions.map(p => ({
-                    id: p.rxId || p._id || p.id,
-                    rxId: p.rxId || p._id || p.id,
-                    _id: p._id || p.rxId || p.id,
-                    status: p.status,
-                    patient: p.patientName || p.patient,
-                    userEmail: (p.userEmail || cleanEmail).toLowerCase().trim(),
-                    filename: p.filename,
-                    doctor: p.doctor,
-                    address: p.address,
-                    phone: p.phone,
-                    createdAt: p.createdAt
-                }));
-                localStorage.setItem(key, JSON.stringify(apiMapped));
-                freshPrescriptions = readPrescriptionsForUser(user);
+            if (res.ok && data.success && Array.isArray(data.prescriptions)) {
+                apiCallSucceeded = true;
+                // Sort by newest first (match backend sort: createdAt desc)
+                const sorted = [...data.prescriptions].sort((a, b) => {
+                    const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                    const tB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                    return tB - tA;
+                });
+                apiLatestRx = sorted[0] || null;
+
+                // Also sync to localStorage so UI state stays consistent
+                if (data.prescriptions.length > 0) {
+                    const key = `medicare_prescriptions_${cleanEmail}`;
+                    const apiMapped = data.prescriptions.map(p => ({
+                        id: p.rxId || p._id || p.id,
+                        rxId: p.rxId || p._id || p.id,
+                        _id: p._id || p.rxId || p.id,
+                        status: p.status,
+                        patient: p.patientName || p.patient,
+                        userEmail: (p.userEmail || cleanEmail).toLowerCase().trim(),
+                        filename: p.filename,
+                        doctor: p.doctor,
+                        address: p.address,
+                        phone: p.phone,
+                        createdAt: p.createdAt
+                    }));
+                    localStorage.setItem(key, JSON.stringify(apiMapped));
+                }
             }
         } catch (err) {
             console.warn('[Cart] Checkout API rx sync warning:', err.message);
         }
 
-        const activeRx = freshPrescriptions.find(rx => rx.status !== 'FULFILLED') || freshPrescriptions[0];
-        const isApproved = Boolean(activeRx && activeRx.status === 'APPROVED');
-        console.log('[Cart] Checkout attempt — active rx:', activeRx ? `${activeRx.id}=${activeRx.status}` : 'None');
+        // If backend is unreachable, block the order — never silently allow based on stale cache
+        if (!apiCallSucceeded) {
+            toast.error('🔒 Order Blocked: Unable to verify prescription approval. Please check your connection and try again.', { duration: 6000 });
+            return;
+        }
+
+        const isApproved = Boolean(apiLatestRx && apiLatestRx.status === 'APPROVED');
+        console.log('[Cart] Checkout attempt — API latest rx:', apiLatestRx ? `${apiLatestRx.rxId || apiLatestRx._id}=${apiLatestRx.status}` : 'None found');
 
         if (!isApproved) {
-            if (activeRx && activeRx.status === 'PENDING_VERIFICATION') {
+            if (apiLatestRx && apiLatestRx.status === 'PENDING_VERIFICATION') {
                 toast.error('🔒 Order Blocked: Prescription is PENDING agent review. Wait for Medical Agent approval.', { duration: 6000 });
                 return;
             }
-            if (activeRx && activeRx.status === 'REJECTED') {
+            if (apiLatestRx && apiLatestRx.status === 'REJECTED') {
                 toast.error('🔒 Order Blocked: Prescription was REJECTED. Upload a new valid prescription.', { duration: 6000 });
                 navigate('/prescription');
                 return;
             }
-            toast.error('🔒 Order Blocked: Upload a doctor prescription and get Medical Agent approval first!', { duration: 6000 });
+            if (apiLatestRx && apiLatestRx.status === 'FULFILLED') {
+                toast.error('🔒 Order Blocked: Your previous prescription was already fulfilled. Upload a fresh doctor prescription and get Medical Agent approval to place a new order.', { duration: 7000 });
+                navigate('/prescription');
+                return;
+            }
+            toast.error('🔒 Order Blocked: Doctor prescription verification required! Upload a prescription and get Medical Agent approval first.', { duration: 6000 });
             navigate('/prescription');
             return;
         }
         setIsPaymentOpen(true);
     };
 
-    const handlePaymentSuccess = (paymentDetails) => {
+    const handlePaymentSuccess = async (paymentDetails) => {
         const cleanEmail = (user.email || '').toLowerCase().trim();
         const userPrescriptions = readPrescriptionsForUser(user);
-        const approvedRx = userPrescriptions.find(r => r.status === 'APPROVED');
+        const approvedRx = userPrescriptions[0]?.status === 'APPROVED' ? userPrescriptions[0] : null;
         const shippingAddress = approvedRx?.address || user?.address || '123 Health Park, New Delhi, India';
         const customerName = approvedRx?.patient || approvedRx?.patientName || user?.name || 'Customer';
         const phone = approvedRx?.phone || user?.phone || '';
@@ -276,46 +320,47 @@ export default function Cart() {
         const existingOrders = JSON.parse(localStorage.getItem(userOrderKey) || localStorage.getItem(legacyUserOrderKey) || '[]');
         localStorage.setItem(userOrderKey, JSON.stringify([newOrder, ...existingOrders]));
 
-        // Fulfill / consume the approved prescription so future orders require a new prescription approval
-        if (approvedRx && approvedRx.id) {
-            const rxId = approvedRx.id;
+        // Fulfill / consume ALL approved prescriptions for this user only if this order contained Rx items
+        if (cartRequiresPrescription) {
             try {
                 // 1. Update email storage
                 const emailKey = `medicare_prescriptions_${cleanEmail}`;
                 const legacyEmailKey = `jaya_prescriptions_${cleanEmail}`;
                 const currentEmailRx = JSON.parse(localStorage.getItem(emailKey) || localStorage.getItem(legacyEmailKey) || '[]');
                 const updatedEmailRx = currentEmailRx.map(p => 
-                    (p.id === rxId || p.rxId === rxId || p._id === rxId) ? { ...p, status: 'FULFILLED', usedInOrder: newOrder.id } : p
+                    p.status === 'APPROVED' ? { ...p, status: 'FULFILLED', usedInOrder: newOrder.id } : p
                 );
                 localStorage.setItem(emailKey, JSON.stringify(updatedEmailRx));
 
                 // 2. Update global list
                 const currentAllRx = JSON.parse(localStorage.getItem('medicare_all_prescriptions') || localStorage.getItem('jaya_all_prescriptions') || '[]');
                 const updatedAllRx = currentAllRx.map(p => 
-                    (p.id === rxId || p.rxId === rxId || p._id === rxId) ? { ...p, status: 'FULFILLED', usedInOrder: newOrder.id } : p
+                    (p.status === 'APPROVED' && (!p.userEmail || p.userEmail.toLowerCase() === cleanEmail)) ? { ...p, status: 'FULFILLED', usedInOrder: newOrder.id } : p
                 );
                 localStorage.setItem('medicare_all_prescriptions', JSON.stringify(updatedAllRx));
 
                 // 3. Update session storage
                 const sessionRx = JSON.parse(sessionStorage.getItem('medicare_session_prescriptions') || sessionStorage.getItem('jaya_session_prescriptions') || '[]');
                 const updatedSession = sessionRx.map(p => 
-                    (p.id === rxId || p.rxId === rxId || p._id === rxId) ? { ...p, status: 'FULFILLED', usedInOrder: newOrder.id } : p
+                    p.status === 'APPROVED' ? { ...p, status: 'FULFILLED', usedInOrder: newOrder.id } : p
                 );
                 sessionStorage.setItem('medicare_session_prescriptions', JSON.stringify(updatedSession));
 
-                // 4. Update backend API
-                const backendUrl = getApiBaseUrl();
-                fetch(`${backendUrl}/prescriptions/${rxId}/status`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: 'FULFILLED' })
-                }).catch(() => {});
+                // 4. Update backend API for every prescription that was approved
+                if (approvedRx && approvedRx.id) {
+                    const backendUrl = getApiBaseUrl();
+                    await fetch(`${backendUrl}/prescriptions/${approvedRx.id}/status`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status: 'FULFILLED' })
+                    }).catch(() => {});
+                }
             } catch (_) {}
-
-            window.dispatchEvent(new Event('medicare_prescription_update'));
-            window.dispatchEvent(new Event('jaya_prescription_update'));
-            window.dispatchEvent(new Event('storage'));
         }
+
+        window.dispatchEvent(new Event('medicare_prescription_update'));
+        window.dispatchEvent(new Event('jaya_prescription_update'));
+        window.dispatchEvent(new Event('storage'));
 
         clearCart();
         setIsPaymentOpen(false);
@@ -411,6 +456,12 @@ export default function Cart() {
                                                     <p className="text-[10px] font-bold uppercase tracking-widest text-primary mb-1">{item.category}</p>
                                                     <h2 className="font-serif text-xl font-medium text-text line-clamp-1">{item.name}</h2>
                                                     <p className="text-sm text-text-muted mt-1">{item.brand}</p>
+                                                    {item.requiresPrescription && (
+                                                        <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                                                            <Icon name="FileText" className="w-3 h-3" />
+                                                            Rx Required
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 <button
                                                     type="button"
@@ -455,6 +506,33 @@ export default function Cart() {
                                     </motion.div>
                                 ))}
                             </AnimatePresence>
+
+                            {/* ── Rx Banner: shows when any cart item requires prescription ── */}
+                            {cartRequiresPrescription && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 flex items-start gap-3"
+                                >
+                                    <Icon name="FileText" className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-bold text-amber-800 dark:text-amber-300">
+                                            📋 Your cart contains prescription-only medicines
+                                        </p>
+                                        <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5 leading-relaxed">
+                                            <span className="font-semibold">{cartRxItems.map(i => i.name).join(', ')}</span> require a valid doctor prescription (Schedule H/H1).
+                                            Upload your prescription and get Medical Agent approval before placing the order.
+                                        </p>
+                                        <Link
+                                            to="/prescription"
+                                            className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-amber-800 dark:text-amber-300 underline underline-offset-2 hover:text-amber-600 transition-colors"
+                                        >
+                                            <Icon name="Upload" className="w-3.5 h-3.5" />
+                                            Upload Prescription Now
+                                        </Link>
+                                    </div>
+                                </motion.div>
+                            )}
                         </div>
 
                         <motion.div 
@@ -568,8 +646,20 @@ export default function Cart() {
                                     )}
                                 </div>
 
-                                {/* Prescription Approval Status Banner — driven by React state, always fresh */}
-                                {isAuthenticated && rxStatus.loaded && (
+                                {/* Prescription Approval Status Banner or OTC direct badge */}
+                                {isAuthenticated && !cartRequiresPrescription && (
+                                    <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs space-y-1.5">
+                                        <div className="flex items-center gap-2">
+                                            <Icon name="CheckCircle" className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                                            <span className="font-bold text-sm">Over-The-Counter (OTC) Order ✓</span>
+                                        </div>
+                                        <p className="leading-relaxed opacity-90">
+                                            All items in your cart are non-prescription medicines. You can proceed directly to checkout and place your order without doctor approval.
+                                        </p>
+                                    </div>
+                                )}
+
+                                {isAuthenticated && cartRequiresPrescription && rxStatus.loaded && (
                                     rxStatus.hasApproved ? (
                                         <div className="p-4 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs space-y-1.5">
                                             <div className="flex items-center gap-2">
@@ -577,7 +667,7 @@ export default function Cart() {
                                                 <span className="font-bold text-sm">Doctor Prescription Verified &amp; Cleared ✓</span>
                                             </div>
                                             <p className="leading-relaxed opacity-95">
-                                                Clearance verified for: <span className="font-semibold text-text font-mono">{items.map(i => `${i.name} (x${i.quantity})`).join(', ')}</span>. You can place your order now!
+                                                Clearance verified for: <span className="font-semibold text-text">{items.map(i => `${i.name} (x${i.quantity})`).join(', ')}</span>. You can place your order now!
                                             </p>
                                         </div>
                                     ) : rxStatus.hasPending ? (
@@ -587,7 +677,7 @@ export default function Cart() {
                                                 Prescription Awaiting Doctor / Agent Review
                                             </p>
                                             <p className="leading-relaxed opacity-90">
-                                                Your uploaded prescription is under review for: <span className="font-semibold text-text font-mono">{items.map(i => `${i.name} (x${i.quantity})`).join(', ')}</span>. Order placement will unlock automatically once verified.
+                                                Your uploaded prescription is under review for: <span className="font-semibold text-text">{items.map(i => `${i.name} (x${i.quantity})`).join(', ')}</span>. Order placement will unlock automatically once verified.
                                             </p>
                                         </div>
                                     ) : rxStatus.hasRejected ? (
@@ -597,7 +687,7 @@ export default function Cart() {
                                                 Prescription REJECTED by Medical Agent
                                             </p>
                                             <p className="leading-relaxed opacity-90">
-                                                Your prescription was rejected. Please upload a valid doctor prescription authorizing: <span className="font-semibold text-text font-mono">{items.map(i => `${i.name} (x${i.quantity})`).join(', ')}</span>.
+                                                Your prescription was rejected. Please upload a valid doctor prescription authorizing: <span className="font-semibold text-text">{items.map(i => `${i.name} (x${i.quantity})`).join(', ')}</span>.
                                             </p>
                                             <Link 
                                                 to="/prescription" 
@@ -614,7 +704,7 @@ export default function Cart() {
                                                 Doctor Prescription Verification Required
                                             </p>
                                             <p className="leading-relaxed text-text-muted">
-                                                Under Indian drug regulations, a doctor prescription is mandatory to order: <span className="font-semibold text-text font-mono">{items.map(i => `${i.name} (x${i.quantity})`).join(', ')}</span>. Upload your prescription for doctor clearance.
+                                                Under Indian drug regulations, a doctor prescription is mandatory to order: <span className="font-semibold text-text">{items.map(i => `${i.name} (x${i.quantity})`).join(', ')}</span>. Upload your prescription for doctor clearance.
                                             </p>
                                             <Link 
                                                 to="/prescription" 
@@ -627,9 +717,9 @@ export default function Cart() {
                                     )
                                 )}
 
-                                {/* Checkout Button — uses rxStatus state, not inline reads */}
+                                {/* Checkout Button — only blocks when cart contains prescription items awaiting approval */}
                                 {(() => {
-                                    const isBlocked = !isAuthenticated || !rxStatus.hasApproved;
+                                    const isBlocked = !isAuthenticated || (cartRequiresPrescription && !rxStatus.hasApproved);
                                     return (
                                         <button
                                             type="button"
@@ -638,14 +728,20 @@ export default function Cart() {
                                             style={{ pointerEvents: isBlocked ? 'none' : 'auto' }}
                                             className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${
                                                 isBlocked
-                                                    ? 'bg-slate-300 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-border cursor-not-allowed opacity-70 shadow-none select-none'
+                                                    ? 'bg-neutral-200 dark:bg-neutral-900 text-black/50 dark:text-white/50 border border-border cursor-not-allowed opacity-60 shadow-none select-none'
                                                     : 'glass-button-primary'
                                             }`}
                                         >
                                             {isBlocked ? (
                                                 <>
                                                     <Icon name="Lock" className="h-4 w-4 text-amber-500" />
-                                                    {!isAuthenticated ? 'Sign In Required' : 'Awaiting Agent Approval'}
+                                                    {!isAuthenticated 
+                                                        ? 'Sign In Required' 
+                                                        : rxStatus.hasPending 
+                                                        ? 'Awaiting Agent Approval' 
+                                                        : rxStatus.hasRejected 
+                                                        ? 'Prescription Rejected' 
+                                                        : 'Prescription Approval Required'}
                                                 </>
                                             ) : (
                                                 <>

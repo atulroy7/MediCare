@@ -42,7 +42,7 @@ function AgentHomeView() {
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(255,255,255,0.08),transparent_60%)]" />
                 <div className="relative z-10 max-w-3xl space-y-4">
                     <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/12 border border-white/20 text-white text-xs font-bold uppercase tracking-wider backdrop-blur-md">
-                        <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse" />
+                        <span className="w-2 h-2 rounded-full bg-emerald-400" />
                         Pharmacist Clinical Command Center
                     </div>
                     <h1 className="font-serif text-3xl sm:text-5xl font-bold tracking-tight leading-tight text-white">

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { readPrescriptionsForUser } from '../pages/Cart';
+import { getApiBaseUrl } from '../services/api';
 import Icon from './Icons';
 import toast from 'react-hot-toast';
 
@@ -44,26 +44,66 @@ export default function PaymentGatewayModal({ isOpen, onClose, totalAmount, cart
         setCardData({ ...cardData, expiry: formatted });
     };
 
-    const verifyUserApproval = () => {
+    // Schedule H / H1 / Rx medicine keywords
+    const RX_KEYWORDS = [
+        'amoxicillin', 'augmentin', 'pantocid', 'pantoprazole', 'metformin',
+        'cetzine', 'cetirizine', 'voveran', 'diclofenac', 'amlopin', 'amlodipine',
+        'thyronorm', 'levothyroxine', 'betnesol', 'betamethasone', 'azithral',
+        'azithromycin', 'tramadol', 'antibiotic', 'steroid', 'schedule h'
+    ];
+
+    const requiresPrescription = Boolean(
+        Array.isArray(cartItems) && cartItems.some(item => 
+            item.requiresPrescription === true || 
+            RX_KEYWORDS.some(kw => (item.name || '').toLowerCase().includes(kw))
+        )
+    );
+
+    // ── Async API-based prescription approval check (only enforced when cart has Rx items)
+    const verifyUserApproval = async () => {
+        // OTC items don't require doctor/agent prescription approval!
+        if (!requiresPrescription) {
+            return true;
+        }
+
         if (!user) {
             toast.error('🔒 Authentication required before payment.', { duration: 5000 });
             return false;
         }
-        const userPrescriptions = readPrescriptionsForUser(user);
-        const activeRx = userPrescriptions.find(rx => rx.status !== 'FULFILLED') || userPrescriptions[0];
-        const isApproved = Boolean(activeRx && activeRx.status === 'APPROVED');
-        if (!isApproved) {
-            toast.error('🔒 Payment BLOCKED: Valid Medical Agent prescription approval required to place order.', { duration: 6000 });
+        const cleanEmail = (user.email || '').toLowerCase().trim();
+        try {
+            const backendUrl = getApiBaseUrl();
+            const res = await fetch(`${backendUrl}/prescriptions/my-prescriptions?email=${encodeURIComponent(cleanEmail)}`);
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                toast.error('🔒 Payment BLOCKED: Unable to verify prescription approval.', { duration: 6000 });
+                return false;
+            }
+            const sorted = [...(data.prescriptions || [])].sort((a, b) => {
+                const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                const tB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                return tB - tA;
+            });
+            const latestRx = sorted[0] || null;
+            const isApproved = Boolean(latestRx && latestRx.status === 'APPROVED');
+            if (!isApproved) {
+                toast.error('🔒 Payment BLOCKED: Valid Medical Agent prescription approval required to place order for prescription medicines.', { duration: 6000 });
+                return false;
+            }
+            return true;
+        } catch (err) {
+            console.error('[PaymentModal] Approval check failed:', err.message);
+            toast.error('🔒 Payment BLOCKED: Could not verify prescription. Check your connection.', { duration: 6000 });
             return false;
         }
-        return true;
     };
 
-    const handleInitiatePayment = (e) => {
+    const handleInitiatePayment = async (e) => {
         e.preventDefault();
 
-        // ── FINAL GUARD: Re-verify prescription approval right before payment ──
-        if (!verifyUserApproval()) {
+        // ── FINAL GUARD: Re-verify prescription approval right before payment (async API check) ──
+        const approved = await verifyUserApproval();
+        if (!approved) {
             onClose();
             return;
         }
@@ -92,8 +132,9 @@ export default function PaymentGatewayModal({ isOpen, onClose, totalAmount, cart
         if (selectedMethod === 'cod') {
             // Direct success for COD
             setProcessing(true);
-            setTimeout(() => {
-                if (!verifyUserApproval()) {
+            setTimeout(async () => {
+                const ok = await verifyUserApproval();
+                if (!ok) {
                     setProcessing(false);
                     onClose();
                     return;
@@ -116,21 +157,23 @@ export default function PaymentGatewayModal({ isOpen, onClose, totalAmount, cart
         }, 1500);
     };
 
-    const handleVerifyOtp = (e) => {
+    const handleVerifyOtp = async (e) => {
         e.preventDefault();
         if (otp.length < 4) {
             toast.error('Please enter the 6-digit OTP code');
             return;
         }
 
-        if (!verifyUserApproval()) {
+        const approved = await verifyUserApproval();
+        if (!approved) {
             onClose();
             return;
         }
 
         setProcessing(true);
-        setTimeout(() => {
-            if (!verifyUserApproval()) {
+        setTimeout(async () => {
+            const ok = await verifyUserApproval();
+            if (!ok) {
                 setProcessing(false);
                 onClose();
                 return;
@@ -156,7 +199,7 @@ export default function PaymentGatewayModal({ isOpen, onClose, totalAmount, cart
                                 256-Bit SSL Encrypted Payment
                             </span>
                         </div>
-                        <h3 className="text-xl font-bold font-serif text-slate-900 dark:text-white mt-1 flex items-center gap-2">
+                        <h3 className="text-xl font-bold font-serif text-text mt-1 flex items-center gap-2">
                             <Icon name="ShieldCheck" className="w-5 h-5 text-emerald-500" />
                             MediCare Express Payment Gateway
                         </h3>
@@ -178,9 +221,15 @@ export default function PaymentGatewayModal({ isOpen, onClose, totalAmount, cart
                     </div>
                     <div className="text-right text-xs text-text-muted">
                         <p className="font-semibold text-text">{cartItems?.length || 0} Medicine Items</p>
-                        <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center justify-end gap-1 mt-0.5">
-                            <Icon name="CheckCircle" className="w-3 h-3" /> Rx Approved
-                        </p>
+                        {requiresPrescription ? (
+                            <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center justify-end gap-1 mt-0.5">
+                                <Icon name="CheckCircle" className="w-3 h-3" /> Rx Doctor Cleared
+                            </p>
+                        ) : (
+                            <p className="text-[10px] text-primary font-bold flex items-center justify-end gap-1 mt-0.5">
+                                <Icon name="CheckCircle" className="w-3 h-3" /> Direct OTC Order
+                            </p>
+                        )}
                     </div>
                 </div>
 
@@ -468,7 +517,7 @@ export default function PaymentGatewayModal({ isOpen, onClose, totalAmount, cart
                         {/* Submit Button */}
                         <button
                             type="submit"
-                            className="w-full py-4 rounded-2xl bg-primary hover:bg-primary-dark text-white font-bold text-sm transition-all shadow-xl shadow-primary/25 flex items-center justify-center gap-2"
+                            className="w-full py-4 rounded-2xl bg-primary hover:bg-primary-dark text-white font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2"
                         >
                             <Icon name="Lock" className="w-4 h-4" />
                             {selectedMethod === 'cod' ? `Confirm Cash on Delivery Order (₹${totalAmount})` : `Proceed to Pay ₹${totalAmount}`}

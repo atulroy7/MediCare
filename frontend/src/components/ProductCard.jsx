@@ -57,7 +57,7 @@ export default function ProductCard({ product }) {
 
                         {/* Quick View Button (Desktop Hover) */}
                         <div className="absolute inset-x-0 bottom-4 flex justify-center opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 pointer-events-none group-hover:pointer-events-auto">
-                            <span className="glass-button bg-white/90 dark:bg-zinc-800/90 text-text px-4 py-2 rounded-full shadow-lg text-xs font-medium backdrop-blur-md border border-border">
+                            <span className="glass-button bg-white/90 dark:bg-surface/90 text-text px-4 py-2 rounded-full shadow-md text-xs font-medium backdrop-blur-md border border-border">
                                 <Icon name="Eye" className="w-4 h-4 mr-1" /> Quick View
                             </span>
                         </div>
@@ -94,17 +94,29 @@ export default function ProductCard({ product }) {
 
                 {/* Add to cart Action */}
                 <div className="p-4 pt-0">
-                    <button
-                        type="button"
-                        onClick={handleAddToCart}
-                        className="w-full glass-button-primary rounded-xl py-3 justify-center group/btn relative overflow-hidden"
-                    >
-                        <span className="relative z-10 flex items-center justify-center gap-2">
-                            <Icon name="ShoppingCart" className="h-4 w-4 transition-transform group-hover/btn:scale-110" />
-                            Add to Cart
-                        </span>
-                        <div className="absolute inset-0 bg-white/20 translate-y-[100%] group-hover/btn:translate-y-0 transition-transform duration-300 ease-out" />
-                    </button>
+                    {product.requiresPrescription ? (
+                        <button
+                            type="button"
+                            onClick={handleAddToCart}
+                            className="w-full rounded-xl py-3 justify-center flex items-center gap-2 font-bold text-sm transition-all bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 hover:border-amber-500/50 group/btn relative overflow-hidden"
+                        >
+                            <Icon name="FileText" className="h-4 w-4 flex-shrink-0" />
+                            <span>Add to Cart</span>
+                            <span className="text-[10px] font-extrabold uppercase tracking-wider bg-amber-500/20 px-1.5 py-0.5 rounded-full">Rx</span>
+                        </button>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={handleAddToCart}
+                            className="w-full glass-button-primary rounded-xl py-3 justify-center group/btn relative overflow-hidden"
+                        >
+                            <span className="relative z-10 flex items-center justify-center gap-2">
+                                <Icon name="ShoppingCart" className="h-4 w-4 transition-transform group-hover/btn:scale-110" />
+                                Add to Cart
+                            </span>
+                            <div className="absolute inset-0 bg-white/20 translate-y-[100%] group-hover/btn:translate-y-0 transition-transform duration-300 ease-out" />
+                        </button>
+                    )}
                 </div>
             </div>
         </motion.article>

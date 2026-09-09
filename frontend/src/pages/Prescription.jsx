@@ -209,7 +209,7 @@ export default function Prescription() {
                         <div className="bg-surface border border-border rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
                             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-border pb-6">
                                 <div>
-                                    <h2 className="text-xl font-bold font-serif text-slate-900 dark:text-white flex items-center gap-2">
+                                    <h2 className="text-xl font-bold font-serif text-text flex items-center gap-2">
                                         <Icon name="ClipboardList" className="w-6 h-6 text-primary" />
                                         My Uploaded Prescriptions
                                     </h2>
@@ -285,7 +285,7 @@ export default function Prescription() {
                                                         {rx.medicinesSummary && rx.medicinesSummary !== 'General Prescription Upload' && (
                                                             <div className="bg-bg rounded-xl border border-border p-2.5">
                                                                 <p className="text-[10px] font-bold text-text-muted uppercase mb-1">Cart Medicines</p>
-                                                                <p className="text-[11px] text-primary font-mono truncate">{rx.medicinesSummary}</p>
+                                                                <p className="text-[11px] text-primary font-semibold truncate">{rx.medicinesSummary}</p>
                                                             </div>
                                                         )}
 

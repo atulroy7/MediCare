@@ -196,7 +196,7 @@ export default function Login() {
                         <Icon name="Shield" className="w-4 h-4" />
                         Secure Healthcare Portal
                     </div>
-                    <h1 className="text-3xl sm:text-4xl font-serif font-bold text-slate-900 dark:text-white tracking-tight">
+                    <h1 className="text-3xl sm:text-4xl font-serif font-bold text-text tracking-tight">
                         Welcome to <span className="text-primary">MediCare</span>
                     </h1>
                     <p className="mt-2 text-sm text-text-muted">
@@ -237,7 +237,7 @@ export default function Login() {
                     {/* Quick Demo Access Bar */}
                     <div className="mb-6 p-4 rounded-2xl bg-bg-subtle/80 border border-border flex flex-col sm:flex-row items-center justify-between gap-3">
                         <div className="flex items-center gap-2.5 text-xs font-medium text-text">
-                            <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="flex h-2 w-2 rounded-full bg-emerald-500" />
                             Want a quick live test?
                         </div>
                         <button
@@ -421,8 +421,8 @@ export default function Login() {
                             disabled={loading}
                             className={`w-full py-3.5 px-6 rounded-xl font-bold text-white shadow-lg transition-all flex items-center justify-center gap-2 mt-6 ${
                                 selectedRole === 'agent'
-                                    ? 'bg-secondary hover:bg-secondary/90 shadow-secondary/25'
-                                    : 'bg-primary hover:bg-primary/90 shadow-primary/25'
+                                    ? 'bg-secondary hover:bg-secondary/90 shadow-md'
+                                    : 'bg-primary hover:bg-primary/90 shadow-md'
                             } ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
                         >
                             {loading ? (

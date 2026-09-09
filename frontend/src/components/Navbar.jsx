@@ -26,7 +26,7 @@ export default function Navbar() {
                     
                     {/* Brand Logo */}
                     <Link to="/" className="flex items-center gap-2.5 group pl-1">
-                        <div className="bg-primary text-white p-2 rounded-full group-hover:scale-105 transition-transform shadow-md shadow-primary/20">
+                        <div className="bg-primary text-white p-2 rounded-full group-hover:scale-105 transition-transform shadow-sm">
                             <Icon name="Activity" className="h-4 w-4" />
                         </div>
                         <p className="font-serif text-lg font-bold tracking-tight text-text">MediCare</p>
@@ -152,7 +152,7 @@ export default function Navbar() {
                         ) : (
                             <Link
                                 to="/login"
-                                className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-white hover:bg-primary-dark transition-all text-xs font-bold shadow-md shadow-primary/20 hover:scale-105"
+                                className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-white hover:bg-primary-dark transition-all text-xs font-bold shadow-sm hover:scale-105"
                             >
                                 <Icon name="User" className="h-3.5 w-3.5" />
                                 <span>Login</span>

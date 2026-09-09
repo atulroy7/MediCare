@@ -1,5 +1,43 @@
 import Icon from '../Icons';
 
+// Comprehensive list of prescription-only drugs matching products.js and Indian Schedule H / H1 regulations
+export const RX_RESTRICTED_DRUGS = [
+    { name: 'Augmentin 625 Duo', keyword: 'augmentin', schedule: 'Schedule H1 (Broad-spectrum Antibiotic)' },
+    { name: 'Amoxicillin 500mg', keyword: 'amoxicillin', schedule: 'Schedule H (Antibiotic)' },
+    { name: 'Azithral 500', keyword: 'azithral', schedule: 'Schedule H1 (Macrolide Antibiotic)' },
+    { name: 'Azithromycin', keyword: 'azithromycin', schedule: 'Schedule H1 (Antibiotic)' },
+    { name: 'Tramadol 50mg', keyword: 'tramadol', schedule: 'Schedule H1 (Controlled Opioid Analgesic)' },
+    { name: 'Betnesol 0.5mg', keyword: 'betnesol', schedule: 'Schedule H (Corticosteroid / Steroid)' },
+    { name: 'Betamethasone', keyword: 'betamethasone', schedule: 'Schedule H (Corticosteroid)' },
+    { name: 'Thyronorm 50mcg', keyword: 'thyronorm', schedule: 'Schedule H (Thyroid Hormone)' },
+    { name: 'Levothyroxine', keyword: 'levothyroxine', schedule: 'Schedule H (Endocrine Therapy)' },
+    { name: 'Amlopin 5mg', keyword: 'amlopin', schedule: 'Schedule H (Calcium Channel Blocker)' },
+    { name: 'Amlodipine', keyword: 'amlodipine', schedule: 'Schedule H (Antihypertensive)' },
+    { name: 'Pantocid 40', keyword: 'pantocid', schedule: 'Schedule H (Proton Pump Inhibitor)' },
+    { name: 'Pantoprazole', keyword: 'pantoprazole', schedule: 'Schedule H (Gastro-resistant PPI)' },
+    { name: 'Metformin SR 500', keyword: 'metformin', schedule: 'Schedule H (Antidiabetic)' },
+    { name: 'Cetzine 10', keyword: 'cetzine', schedule: 'Schedule H (Potent Antihistamine)' },
+    { name: 'Cetirizine', keyword: 'cetirizine', schedule: 'Schedule H (Antihistamine)' },
+    { name: 'Voveran Emulgel', keyword: 'voveran', schedule: 'Schedule H1 (Topical NSAID)' },
+    { name: 'Diclofenac', keyword: 'diclofenac', schedule: 'Schedule H1 (NSAID)' },
+];
+
+export function analyzeRxRequirements(prescription) {
+    if (!prescription) return { requiresVerification: false, detectedDrugs: [] };
+    const text = [
+        prescription.medicinesSummary || '',
+        prescription.notes || '',
+        prescription.doctor || '',
+    ].join(' ').toLowerCase();
+
+    const matched = RX_RESTRICTED_DRUGS.filter(d => text.includes(d.keyword));
+    const requiresVerification = matched.length > 0 || prescription.requiresVerification === true;
+    return {
+        requiresVerification,
+        detectedDrugs: matched,
+    };
+}
+
 export default function AgentDashboard({
     user,
     agentQueue,
@@ -16,12 +54,17 @@ export default function AgentDashboard({
 }) {
     const filteredQueue = agentQueue.filter(item => {
         if (agentFilter === 'ALL') return true;
+        if (agentFilter === 'STRICT_RX') return analyzeRxRequirements(item).requiresVerification;
         return item.status === agentFilter;
     });
 
+    const pendingStrictRxCount = agentQueue.filter(
+        q => analyzeRxRequirements(q).requiresVerification && q.status === 'PENDING_VERIFICATION'
+    ).length;
+
     // Stats overview for agent
     const StatsGrid = () => (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm space-y-1">
                 <div className="flex items-center justify-between text-xs text-text-muted">
                     <span>Agent Credentials</span>
@@ -41,10 +84,23 @@ export default function AgentDashboard({
                     </div>
                 </div>
                 <p className="font-serif font-bold text-2xl text-text">{agentQueue.length}</p>
-                <p className="text-[11px] text-emerald-600 font-medium">Active Clinical Workstation</p>
+                <p className="text-[11px] text-emerald-600 font-medium">All Incoming Queue</p>
             </div>
 
-            <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm space-y-1">
+            <div className="bg-surface border border-red-500/30 bg-red-500/5 rounded-2xl p-5 shadow-sm space-y-1">
+                <div className="flex items-center justify-between text-xs text-red-600 dark:text-red-400 font-bold">
+                    <span>Strict Rx Cases</span>
+                    <div className="p-1.5 rounded-lg bg-red-500/10">
+                        <Icon name="ShieldAlert" className="w-4 h-4 text-red-600" />
+                    </div>
+                </div>
+                <p className="font-serif font-bold text-2xl text-red-600 dark:text-red-400">
+                    {pendingStrictRxCount}
+                </p>
+                <p className="text-[11px] text-red-700 dark:text-red-300 font-medium">Schedule H/H1 Priority</p>
+            </div>
+
+            <div className="bg-surface border border-border rounded-2xl p-5 shadow-y-1 space-y-1">
                 <div className="flex items-center justify-between text-xs text-text-muted">
                     <span>Approved Clearances</span>
                     <div className="p-1.5 rounded-lg bg-emerald-500/10">
@@ -87,19 +143,30 @@ export default function AgentDashboard({
                 </div>
 
                 {/* Filter Tabs */}
-                <div className="flex items-center p-1 bg-bg rounded-xl border border-border text-xs overflow-x-auto">
-                    {['ALL', 'PENDING_VERIFICATION', 'APPROVED', 'FULFILLED', 'REJECTED'].map((filter) => (
+                <div className="flex items-center p-1 bg-bg rounded-xl border border-border text-xs overflow-x-auto gap-1">
+                    {[
+                        { key: 'ALL', label: 'ALL' },
+                        { key: 'STRICT_RX', label: '⚠️ STRICT RX ONLY' },
+                        { key: 'PENDING_VERIFICATION', label: 'PENDING' },
+                        { key: 'APPROVED', label: 'APPROVED' },
+                        { key: 'FULFILLED', label: 'FULFILLED' },
+                        { key: 'REJECTED', label: 'REJECTED' },
+                    ].map(({ key, label }) => (
                         <button
-                            key={filter}
+                            key={key}
                             type="button"
-                            onClick={() => setAgentFilter(filter)}
+                            onClick={() => setAgentFilter(key)}
                             className={`px-3 py-1.5 rounded-lg font-bold transition-all text-[11px] uppercase tracking-wider whitespace-nowrap ${
-                                agentFilter === filter
-                                    ? 'bg-primary text-white shadow-sm'
-                                    : 'text-text-muted hover:text-text'
+                                agentFilter === key
+                                    ? key === 'STRICT_RX'
+                                        ? 'bg-red-600 text-white shadow-sm'
+                                        : 'bg-primary text-white shadow-sm'
+                                    : key === 'STRICT_RX'
+                                        ? 'text-red-600 dark:text-red-400 hover:bg-red-500/10'
+                                        : 'text-text-muted hover:text-text'
                             }`}
                         >
-                            {filter === 'PENDING_VERIFICATION' ? 'PENDING' : filter}
+                            {label}
                         </button>
                     ))}
                 </div>
@@ -116,14 +183,20 @@ export default function AgentDashboard({
                 </div>
             ) : (
                 <div className="space-y-4">
-                    {filteredQueue.map((item) => (
+                    {filteredQueue.map((item) => {
+                        const { requiresVerification, detectedDrugs } = analyzeRxRequirements(item);
+                        return (
                         <div
                             key={item.id}
-                            className="bg-bg border border-border hover:border-primary/30 rounded-2xl p-5 transition-all space-y-4 shadow-sm"
+                            className={`border rounded-2xl p-5 transition-all space-y-4 shadow-sm ${
+                                requiresVerification
+                                    ? 'bg-bg border-red-500/30 hover:border-red-500/50'
+                                    : 'bg-bg border-border hover:border-primary/30'
+                            }`}
                         >
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                 <div className="space-y-1">
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex flex-wrap items-center gap-2">
                                         <span className="font-mono text-xs font-bold text-secondary">{item.id}</span>
                                         <span
                                             className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
@@ -138,6 +211,17 @@ export default function AgentDashboard({
                                         >
                                             {item.status ? item.status.replace('_', ' ') : 'PENDING'}
                                         </span>
+                                        {requiresVerification ? (
+                                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/30 flex items-center gap-1 shadow-sm">
+                                                <Icon name="ShieldAlert" className="w-3 h-3 text-red-600" />
+                                                Strict Rx Verification Required (Schedule H/H1)
+                                            </span>
+                                        ) : (
+                                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-primary/10 text-primary border border-primary/25 flex items-center gap-1">
+                                                <Icon name="CheckCircle" className="w-3 h-3" />
+                                                Standard / OTC Consultation
+                                            </span>
+                                        )}
                                         <span className="text-xs text-text-muted">• Uploaded {item.date}</span>
                                     </div>
                                     <h3 className="font-bold text-text text-base">
@@ -146,6 +230,24 @@ export default function AgentDashboard({
                                     <p className="text-xs text-text-muted">
                                         Doctor Ref: <span className="font-medium text-text">{item.doctor || 'General Physician'}</span>
                                     </p>
+                                    {(item.medicinesSummary || item.notes) && (
+                                        <p className="text-xs text-text-muted mt-1 bg-surface rounded-lg px-2.5 py-1.5 border border-border">
+                                            <span className="font-semibold text-text">Medicines: </span>
+                                            {item.medicinesSummary || item.notes}
+                                        </p>
+                                    )}
+                                    {requiresVerification && detectedDrugs.length > 0 && (
+                                        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                                            <span className="text-[10px] font-extrabold text-red-600 dark:text-red-400 uppercase tracking-wider">
+                                                Restricted Drugs Detected:
+                                            </span>
+                                            {detectedDrugs.map((d, i) => (
+                                                <span key={i} className="text-[10px] font-mono font-bold bg-red-500/15 text-red-700 dark:text-red-300 px-2 py-0.5 rounded-md border border-red-500/25">
+                                                    {d.name} ({d.schedule})
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="flex items-center gap-2">
@@ -213,7 +315,8 @@ export default function AgentDashboard({
                                 </div>
                             </div>
                         </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
         </div>

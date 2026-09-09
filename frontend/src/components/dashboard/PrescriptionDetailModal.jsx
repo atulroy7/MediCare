@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Icon from '../Icons';
+import { analyzeRxRequirements } from './AgentDashboard';
 
 export default function PrescriptionDetailModal({ selectedRx, onClose, onApprove, onReject, onSaveSuggestion, agentSuggestions, setAgentSuggestions, isAgent }) {
     const [fullImageZoom, setFullImageZoom] = useState(false);
@@ -108,7 +109,7 @@ export default function PrescriptionDetailModal({ selectedRx, onClose, onApprove
                                         </div>
                                         <div className="p-3 bg-surface rounded-xl border border-border text-left w-full space-y-1">
                                             <p className="text-[10px] font-bold text-text-muted uppercase">Medicines Summary</p>
-                                            <p className="text-xs font-mono text-primary font-semibold truncate">{selectedRx.medicinesSummary || 'General Prescription'}</p>
+                                            <p className="text-xs text-primary font-semibold truncate">{selectedRx.medicinesSummary || 'General Prescription'}</p>
                                         </div>
                                     </div>
                                 )}
@@ -137,6 +138,55 @@ export default function PrescriptionDetailModal({ selectedRx, onClose, onApprove
                                 </div>
                             </div>
 
+                            {/* ── Regulatory Compliance & Strict Rx Analysis ── */}
+                            {(() => {
+                                const { requiresVerification, detectedDrugs } = analyzeRxRequirements(selectedRx);
+                                if (requiresVerification) {
+                                    return (
+                                        <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-4 space-y-2.5 text-xs">
+                                            <div className="flex items-center gap-2 text-red-600 dark:text-red-400 font-extrabold text-xs tracking-wider uppercase">
+                                                <Icon name="ShieldAlert" className="w-4 h-4 text-red-600 flex-shrink-0" />
+                                                <span>⚠️ Strict Rx Verification Required (Schedule H/H1)</span>
+                                            </div>
+                                            <p className="text-red-800 dark:text-red-300 font-medium leading-relaxed">
+                                                This order contains regulated medicines strictly prohibited from being dispensed without valid doctor clearance.
+                                            </p>
+                                            {detectedDrugs.length > 0 && (
+                                                <div className="space-y-1">
+                                                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-red-700 dark:text-red-400">
+                                                        Restricted Drugs Identified:
+                                                    </p>
+                                                    <div className="flex flex-wrap gap-1.5">
+                                                        {detectedDrugs.map((d, i) => (
+                                                            <span key={i} className="font-mono text-[10px] font-bold bg-red-500/20 text-red-700 dark:text-red-200 px-2 py-0.5 rounded-md border border-red-500/30">
+                                                                {d.name} • {d.schedule}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            <div className="bg-surface/80 p-2.5 rounded-xl border border-red-500/20 text-[11px] space-y-1 text-text-muted mt-2">
+                                                <p className="font-bold text-text">Pharmacist Audit Checklist:</p>
+                                                <p>✓ Doctor Registration Number &amp; Clinic Seal visible</p>
+                                                <p>✓ Patient name matches order recipient</p>
+                                                <p>✓ Prescribed dosage and course duration verified</p>
+                                            </div>
+                                        </div>
+                                    );
+                                }
+                                return (
+                                    <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-3.5 space-y-1 text-xs">
+                                        <div className="flex items-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400">
+                                            <Icon name="CheckCircle" className="w-4 h-4" />
+                                            <span>Standard Consultation / OTC Upload</span>
+                                        </div>
+                                        <p className="text-text-muted text-[11px]">
+                                            No Schedule H / H1 restricted drugs detected. Standard clinical review applies.
+                                        </p>
+                                    </div>
+                                );
+                            })()}
+
                             {/* Medicines Under Doctor Verification */}
                             <div className="bg-primary/8 border border-primary/15 rounded-2xl p-4 space-y-2">
                                 <div className="flex items-center justify-between">
@@ -148,7 +198,7 @@ export default function PrescriptionDetailModal({ selectedRx, onClose, onApprove
                                         Clinical Verification
                                     </span>
                                 </div>
-                                <div className="bg-surface p-3 rounded-xl border border-border font-mono text-xs text-text font-bold leading-relaxed">
+                                <div className="bg-surface p-3 rounded-xl border border-border text-xs text-text font-bold leading-relaxed">
                                     {selectedRx.medicinesSummary || 'General Medical Prescription'}
                                 </div>
                                 <p className="text-[11px] text-text-muted leading-relaxed">
@@ -159,7 +209,7 @@ export default function PrescriptionDetailModal({ selectedRx, onClose, onApprove
                             {/* Customer Notes */}
                             <div className="bg-bg border border-border rounded-2xl p-4 space-y-1">
                                 <h4 className="text-xs font-extrabold uppercase text-text-muted tracking-wider">Patient / Doctor Notes</h4>
-                                <p className="text-xs text-text leading-relaxed font-mono">
+                                <p className="text-xs text-text leading-relaxed">
                                     {selectedRx.notes || 'No extra notes provided.'}
                                 </p>
                             </div>

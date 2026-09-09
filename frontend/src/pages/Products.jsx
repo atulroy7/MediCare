@@ -152,7 +152,7 @@ export default function Products() {
                                     onClick={() => handleCategoryChange(catName)}
                                     className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
                                         isActive
-                                            ? 'bg-primary text-white shadow-md shadow-primary/25 scale-105'
+                                            ? 'bg-primary text-white shadow-sm scale-105'
                                             : 'bg-surface/80 border border-border text-text-muted hover:text-text hover:bg-bg-subtle'
                                     }`}
                                 >

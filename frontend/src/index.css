@@ -6,53 +6,53 @@
 
 @layer base {
   :root {
-    /* ─── Light Mode: Warm Neutral — Off-white Canvas & Sage Green Primary ─── */
-    --color-bg: 248 246 243; /* #F8F6F3 - Warm Off-White Canvas */
-    --color-bg-subtle: 240 236 230; /* #F0ECE6 - Warm Stone Subtle */
-    --color-text: 28 28 30; /* #1C1C1E - Soft Charcoal Text */
-    --color-text-muted: 107 100 92; /* #6B645C - Warm Muted Text */
+    /* ─── Light Mode: Pure Solid Black Text on Crisp White Canvas ─── */
+    --color-bg: 255 255 255; /* #FFFFFF - Pure Canvas */
+    --color-bg-subtle: 247 247 249; /* #F7F7F9 - Clean Light Subtle */
+    --color-text: 0 0 0; /* #000000 - Solid Pure Black Text */
+    --color-text-muted: 0 0 0; /* #000000 - Crisp Black Text (No grey) */
     
-    --color-primary: 107 143 113; /* #6B8F71 - Muted Sage Green */
-    --color-primary-light: 127 168 134; /* #7FA886 - Light Sage */
-    --color-primary-dark: 75 107 80; /* #4B6B50 - Deep Forest */
+    --color-primary: 22 101 52; /* #166534 - Forest / Emerald Green */
+    --color-primary-light: 34 197 94; /* #22C55E */
+    --color-primary-dark: 20 83 45; /* #14532D */
     
     --color-secondary: 196 149 106; /* #C4956A - Warm Terracotta */
     
-    --color-surface: 254 253 251; /* #FEFDFB - Warm Cream Surface */
-    --color-border: 232 228 223; /* #E8E4DF - Warm Stone Border */
+    --color-surface: 255 255 255; /* #FFFFFF - Pure Crisp Surface */
+    --color-border: 228 228 231; /* #E4E4E7 - Clean Border */
     
-    --glass-border: rgba(107, 143, 113, 0.15);
-    --glass-bg: rgba(254, 253, 251, 0.92);
-    --glass-shadow: 0 12px 32px -8px rgba(28, 28, 30, 0.08);
+    --glass-border: rgba(0, 0, 0, 0.08);
+    --glass-bg: rgba(255, 255, 255, 0.95);
+    --glass-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.08);
 
-    --lofi-gradient-1: #f0ece6; /* Warm Stone */
-    --lofi-gradient-2: #f5f2ed; /* Light Linen */
-    --lofi-gradient-3: #f8f6f3;
+    --lofi-gradient-1: #ffffff;
+    --lofi-gradient-2: #f7f7f9;
+    --lofi-gradient-3: #fafafb;
   }
 
   .dark {
-    /* ─── Dark Mode: Charcoal — Rich Dark with Sage Green Accents ─── */
-    --color-bg: 26 26 30; /* #1A1A1E - Charcoal */
-    --color-bg-subtle: 34 34 39; /* #222227 - Deep Charcoal */
-    --color-text: 245 243 239; /* #F5F3EF - Warm White Text */
-    --color-text-muted: 156 150 142; /* #9C968E - Muted Warm Gray */
+    /* ─── Dark Mode: Deep Black Canvas with Soft Non-Neon Accents ─── */
+    --color-bg: 0 0 0; /* #000000 - Deep Pitch Black Canvas */
+    --color-bg-subtle: 10 10 12; /* #0A0A0C - Ultra Deep Black */
+    --color-text: 255 255 255; /* #FFFFFF - Solid Pure White Text */
+    --color-text-muted: 220 224 230; /* #DCE0E6 - Soft Crisp White (No grey) */
     
-    --color-primary: 127 168 134; /* #7FA886 - Soft Sage Glow */
-    --color-primary-light: 152 192 158; /* #98C09E */
-    --color-primary-dark: 92 130 98; /* #5C8262 */
+    --color-primary: 56 138 98; /* #388A62 - Soft organic medical sage green (Zero neon) */
+    --color-primary-light: 78 158 118; /* #4E9E76 - Soft gentle sage */
+    --color-primary-dark: 42 106 74; /* #2A6A4A - Deep forest tone */
     
-    --color-secondary: 210 168 134; /* #D2A886 - Soft Terracotta */
+    --color-secondary: 196 149 106; /* #C4956A - Muted warm terracotta / sand */
     
-    --color-surface: 32 32 37; /* #202025 - Dark Surface */
-    --color-border: 52 52 58; /* #34343A - Subtle Border */
+    --color-surface: 14 14 16; /* #0E0E10 - Deep Black Surface */
+    --color-border: 28 28 32; /* #1C1C20 - Subtle Deep Black Border */
     
-    --glass-border: rgba(245, 243, 239, 0.08);
-    --glass-bg: rgba(32, 32, 37, 0.92);
-    --glass-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-bg: rgba(10, 10, 12, 0.94);
+    --glass-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.9);
 
-    --lofi-gradient-1: #1a1a1e; /* Charcoal */
-    --lofi-gradient-2: #16161a; /* Deep Charcoal */
-    --lofi-gradient-3: #202025;
+    --lofi-gradient-1: #000000;
+    --lofi-gradient-2: #060608;
+    --lofi-gradient-3: #0c0c0f;
   }
 
   html {
@@ -97,7 +97,7 @@
   }
   
   .glass-button-primary {
-    @apply glass-button bg-[rgb(var(--color-primary))] text-white hover:bg-[rgb(var(--color-primary-dark))] shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5;
+    @apply glass-button bg-[rgb(var(--color-primary))] text-white hover:bg-[rgb(var(--color-primary-dark))] shadow-md hover:shadow-lg hover:-translate-y-0.5;
   }
 
   .glass-button-secondary {
