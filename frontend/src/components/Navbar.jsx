@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { featuredCategories } from '../data/products';
+import Logo from './Logo';
 import Icon from './Icons';
 import ThemeToggle from './ThemeToggle';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,6 +13,7 @@ export default function Navbar() {
     const { user, role, isAuthenticated } = useAuth();
     const [menuOpen, setMenuOpen] = useState(false);
     const [catDropdownOpen, setCatDropdownOpen] = useState(false);
+    const [scrolled, setScrolled] = useState(false);
     const location = useLocation();
 
     useEffect(() => {
@@ -19,45 +21,49 @@ export default function Navbar() {
         setCatDropdownOpen(false);
     }, [location.pathname]);
 
+    useEffect(() => {
+        const onScroll = () => setScrolled(window.scrollY > 20);
+        window.addEventListener('scroll', onScroll, { passive: true });
+        return () => window.removeEventListener('scroll', onScroll);
+    }, []);
+
     return (
-        <header className="sticky top-4 z-50 px-4 sm:px-6 lg:px-8 mb-6 pointer-events-none">
-            <div className="mx-auto max-w-7xl pointer-events-auto">
-                <nav aria-label="Primary navigation" className="bg-[var(--glass-bg)] border border-[var(--glass-border)] shadow-lg backdrop-blur-2xl rounded-full px-5 py-3 transition-all duration-300 flex items-center justify-between">
-                    
+        <header className={`sticky top-0 z-50 w-full transition-all duration-300 ${scrolled ? 'bg-[var(--glass-bg)] backdrop-blur-xl border-b border-[var(--glass-border)] shadow-sm' : 'bg-transparent'}`}>
+            <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
+                <nav aria-label="Primary navigation" className="flex items-center justify-between h-16">
+
                     {/* Brand Logo */}
-                    <Link to="/" className="flex items-center gap-2.5 group pl-1">
-                        <div className="bg-primary text-white p-2 rounded-full group-hover:scale-105 transition-transform shadow-sm">
-                            <Icon name="Activity" className="h-4 w-4" />
-                        </div>
-                        <p className="font-serif text-lg font-bold tracking-tight text-text">MediCare</p>
+                    <Link to="/" className="flex items-center gap-2.5 group flex-shrink-0">
+                        <Logo className="h-7 w-7 transition-transform duration-200 group-hover:scale-105" />
+                        <span className="font-serif text-lg font-bold tracking-tight text-[rgb(var(--color-text))]">MediCare</span>
                     </Link>
 
                     {/* Desktop Navigation Links */}
-                    <div className="hidden lg:flex items-center gap-1 bg-bg-subtle/80 p-1 rounded-full border border-border/50">
-                        <NavLink to="/" className={({ isActive }) => navCapsuleClass(isActive)}>
+                    <div className="hidden lg:flex items-center gap-6">
+                        <NavLink to="/" className={({ isActive }) => navLinkClass(isActive)}>
                             Home
                         </NavLink>
 
                         {role === 'agent' ? (
                             <>
-                                <NavLink to="/dashboard" className={({ isActive }) => navCapsuleClass(isActive)}>
+                                <NavLink to="/dashboard" className={({ isActive }) => navLinkClass(isActive)}>
                                     Agent Workstation
                                 </NavLink>
-                                <NavLink to="/about" className={({ isActive }) => navCapsuleClass(isActive)}>
+                                <NavLink to="/about" className={({ isActive }) => navLinkClass(isActive)}>
                                     About
                                 </NavLink>
-                                <NavLink to="/contact" className={({ isActive }) => navCapsuleClass(isActive)}>
+                                <NavLink to="/contact" className={({ isActive }) => navLinkClass(isActive)}>
                                     Contact
                                 </NavLink>
                             </>
                         ) : (
                             <>
-                                <NavLink to="/products" className={({ isActive }) => navCapsuleClass(isActive)} end>
+                                <NavLink to="/products" className={({ isActive }) => navLinkClass(isActive)} end>
                                     Products
                                 </NavLink>
 
                                 {/* Categories Dropdown */}
-                                <div 
+                                <div
                                     className="relative"
                                     onMouseEnter={() => setCatDropdownOpen(true)}
                                     onMouseLeave={() => setCatDropdownOpen(false)}
@@ -65,29 +71,29 @@ export default function Navbar() {
                                     <button
                                         type="button"
                                         onClick={() => setCatDropdownOpen(prev => !prev)}
-                                        className="px-4 py-1.5 rounded-full text-xs font-semibold text-text-muted hover:text-text hover:bg-surface/80 transition-all flex items-center gap-1"
+                                        className="flex items-center gap-1 text-sm font-medium text-[rgb(var(--color-text-muted))] hover:text-[rgb(var(--color-text))] transition-colors"
                                     >
                                         <span>Categories</span>
-                                        <Icon name="ChevronDown" className={`w-3 h-3 transition-transform duration-200 ${catDropdownOpen ? 'rotate-180 text-primary' : ''}`} />
+                                        <Icon name="ChevronDown" className={`w-3.5 h-3.5 transition-transform duration-200 ${catDropdownOpen ? 'rotate-180' : ''}`} />
                                     </button>
 
                                     <AnimatePresence>
                                         {catDropdownOpen && (
                                             <motion.div
-                                                initial={{ opacity: 0, y: 12, scale: 0.95 }}
-                                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                                exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                                                transition={{ duration: 0.18 }}
-                                                className="absolute left-1/2 -translate-x-1/2 top-full pt-3 w-64 z-50"
+                                                initial={{ opacity: 0, y: 8 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: 6 }}
+                                                transition={{ duration: 0.15 }}
+                                                className="absolute left-1/2 -translate-x-1/2 top-full pt-4 w-60 z-50"
                                             >
-                                                <div className="bg-surface/95 border border-border backdrop-blur-2xl rounded-3xl shadow-2xl p-2.5 space-y-1">
+                                                <div className="bg-[var(--glass-bg)] border border-[var(--glass-border)] backdrop-blur-xl rounded-2xl shadow-xl p-2 space-y-0.5">
                                                     {featuredCategories.map((cat) => (
                                                         <Link
                                                             key={cat.name}
                                                             to={`/products?category=${encodeURIComponent(cat.name)}`}
-                                                            className="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-bg-subtle transition-colors text-xs font-semibold text-text group"
+                                                            className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-[rgb(var(--color-bg-subtle))] transition-colors text-sm font-medium text-[rgb(var(--color-text))]"
                                                         >
-                                                            <div className="p-1.5 rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                                                            <div className="p-1.5 rounded-lg bg-[rgb(var(--color-bg-subtle))] text-[rgb(var(--color-primary))]">
                                                                 <Icon name={cat.iconKey || 'Pill'} className="w-3.5 h-3.5" />
                                                             </div>
                                                             <span>{cat.name}</span>
@@ -99,13 +105,13 @@ export default function Navbar() {
                                     </AnimatePresence>
                                 </div>
 
-                                <NavLink to="/prescription" className={({ isActive }) => navCapsuleClass(isActive)}>
+                                <NavLink to="/prescription" className={({ isActive }) => navLinkClass(isActive)}>
                                     Prescription
                                 </NavLink>
-                                <NavLink to="/about" className={({ isActive }) => navCapsuleClass(isActive)}>
+                                <NavLink to="/about" className={({ isActive }) => navLinkClass(isActive)}>
                                     About
                                 </NavLink>
-                                <NavLink to="/contact" className={({ isActive }) => navCapsuleClass(isActive)}>
+                                <NavLink to="/contact" className={({ isActive }) => navLinkClass(isActive)}>
                                     Contact
                                 </NavLink>
                             </>
@@ -119,9 +125,9 @@ export default function Navbar() {
                         {role !== 'agent' && (
                             <Link
                                 to="/cart"
-                                className="bg-bg-subtle/80 hover:bg-surface text-text relative flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold border border-border/80 transition-all hover:scale-105"
+                                className="relative flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[rgb(var(--color-text-muted))] hover:text-[rgb(var(--color-text))] transition-colors"
                             >
-                                <Icon name="ShoppingCart" className="h-4 w-4 text-primary" />
+                                <Icon name="ShoppingCart" className="h-4 w-4" />
                                 <span>Cart</span>
                                 <AnimatePresence>
                                     {cartCount > 0 && (
@@ -129,7 +135,7 @@ export default function Navbar() {
                                             initial={{ scale: 0 }}
                                             animate={{ scale: 1 }}
                                             exit={{ scale: 0 }}
-                                            className="flex h-4 w-4 items-center justify-center rounded-full bg-secondary text-[9px] font-bold text-white shadow-sm"
+                                            className="flex h-4 w-4 items-center justify-center rounded-full bg-[rgb(var(--color-primary))] text-[9px] font-bold text-white"
                                         >
                                             {cartCount}
                                         </motion.span>
@@ -141,18 +147,17 @@ export default function Navbar() {
                         {isAuthenticated ? (
                             <Link
                                 to="/dashboard"
-                                className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/15 hover:bg-primary/15 transition-all text-xs font-bold text-primary"
+                                className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-[rgb(var(--color-bg-subtle))] border border-[rgb(var(--color-border))] hover:bg-[rgb(var(--color-surface))] transition-colors text-sm font-medium text-[rgb(var(--color-text))]"
                             >
-                                <span className={`w-2 h-2 rounded-full ${role === 'agent' ? 'bg-secondary' : 'bg-primary'}`} />
                                 <span className="max-w-[100px] truncate">{user?.name || 'Account'}</span>
-                                <span className="text-[9px] uppercase font-extrabold px-1.5 py-0.5 rounded-full bg-primary text-white">
+                                <span className="text-[10px] uppercase font-semibold px-1.5 py-0.5 rounded bg-[rgb(var(--color-primary))]/10 text-[rgb(var(--color-primary))]">
                                     {role === 'agent' ? 'Agent' : 'User'}
                                 </span>
                             </Link>
                         ) : (
                             <Link
                                 to="/login"
-                                className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-white hover:bg-primary-dark transition-all text-xs font-bold shadow-sm hover:scale-105"
+                                className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-[rgb(var(--color-primary))] text-white hover:opacity-90 transition-opacity text-sm font-medium"
                             >
                                 <Icon name="User" className="h-3.5 w-3.5" />
                                 <span>Login</span>
@@ -165,110 +170,118 @@ export default function Navbar() {
                         <ThemeToggle />
                         <button
                             type="button"
-                            className="p-2 rounded-full bg-bg-subtle text-text hover:bg-surface transition-colors border border-border/80"
+                            className="p-2 rounded-lg text-[rgb(var(--color-text-muted))] hover:text-[rgb(var(--color-text))] hover:bg-[rgb(var(--color-bg-subtle))] transition-colors"
                             aria-label={menuOpen ? 'Close menu' : 'Open menu'}
                             aria-expanded={menuOpen}
                             onClick={() => setMenuOpen((value) => !value)}
                         >
-                            <Icon name={menuOpen ? 'X' : 'Menu'} className="h-4 w-4" />
+                            <Icon name={menuOpen ? 'X' : 'Menu'} className="h-5 w-5" />
                         </button>
                     </div>
                 </nav>
+            </div>
 
-                {/* Mobile Dropdown Container */}
-                <AnimatePresence>
-                    {menuOpen && (
-                        <motion.div 
-                            initial={{ opacity: 0, y: -10, scale: 0.98 }}
-                            animate={{ opacity: 1, y: 8, scale: 1 }}
-                            exit={{ opacity: 0, y: -10, scale: 0.98 }}
-                            className="mt-2 bg-surface/95 border border-border backdrop-blur-2xl rounded-3xl shadow-2xl lg:hidden overflow-hidden p-4"
-                        >
-                            <div className="flex flex-col gap-2">
-                                <NavLink to="/" className={({ isActive }) => mobileNavClass(isActive)}>
-                                    Home
-                                </NavLink>
+            {/* Mobile Dropdown */}
+            <AnimatePresence>
+                {menuOpen && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="lg:hidden border-t border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-xl overflow-hidden"
+                    >
+                        <div className="mx-auto max-w-7xl px-5 sm:px-8 py-4 flex flex-col gap-1">
+                            <NavLink to="/" className={({ isActive }) => mobileNavClass(isActive)}>
+                                Home
+                            </NavLink>
 
-                                {role === 'agent' ? (
-                                    <>
-                                        <NavLink to="/dashboard" className={({ isActive }) => mobileNavClass(isActive)}>
-                                            Agent Workstation
-                                        </NavLink>
-                                        <NavLink to="/about" className={({ isActive }) => mobileNavClass(isActive)}>
-                                            About Pharmacy
-                                        </NavLink>
-                                        <NavLink to="/contact" className={({ isActive }) => mobileNavClass(isActive)}>
-                                            Contact Support
-                                        </NavLink>
-                                    </>
-                                ) : (
-                                    <>
-                                        <div className="py-2 border-y border-border my-1 space-y-1">
-                                            <span className="text-[10px] uppercase font-extrabold text-text-muted tracking-wider px-3 block">
-                                                Explore Categories
-                                            </span>
-                                            <div className="grid grid-cols-2 gap-1.5 pt-1">
-                                                {featuredCategories.map((cat) => (
-                                                    <Link
-                                                        key={cat.name}
-                                                        to={`/products?category=${encodeURIComponent(cat.name)}`}
-                                                        className="p-2 rounded-xl text-xs font-semibold text-text bg-bg-subtle/50 hover:bg-bg-subtle flex items-center gap-2"
-                                                    >
-                                                        <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                                                        <span className="truncate">{cat.name}</span>
-                                                    </Link>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        <NavLink to="/products" className={({ isActive }) => mobileNavClass(isActive)}>
-                                            All Products
-                                        </NavLink>
-                                        <NavLink to="/prescription" className={({ isActive }) => mobileNavClass(isActive)}>
-                                            Prescription Upload
-                                        </NavLink>
-                                        <NavLink to="/cart" className={({ isActive }) => mobileNavClass(isActive)}>
-                                            <span className="flex items-center justify-between w-full">
-                                                Cart
-                                                {cartCount > 0 && (
-                                                    <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold text-white">{cartCount}</span>
-                                                )}
-                                            </span>
-                                        </NavLink>
-                                    </>
-                                )}
-
-                                {isAuthenticated ? (
+                            {role === 'agent' ? (
+                                <>
                                     <NavLink to="/dashboard" className={({ isActive }) => mobileNavClass(isActive)}>
+                                        Agent Workstation
+                                    </NavLink>
+                                    <NavLink to="/about" className={({ isActive }) => mobileNavClass(isActive)}>
+                                        About Pharmacy
+                                    </NavLink>
+                                    <NavLink to="/contact" className={({ isActive }) => mobileNavClass(isActive)}>
+                                        Contact Support
+                                    </NavLink>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="pt-3 pb-1">
+                                        <span className="text-[10px] uppercase font-semibold text-[rgb(var(--color-text-muted))] tracking-wider px-3 block mb-2">
+                                            Categories
+                                        </span>
+                                        <div className="grid grid-cols-2 gap-1">
+                                            {featuredCategories.map((cat) => (
+                                                <Link
+                                                    key={cat.name}
+                                                    to={`/products?category=${encodeURIComponent(cat.name)}`}
+                                                    className="px-3 py-2 rounded-lg text-sm font-medium text-[rgb(var(--color-text))] hover:bg-[rgb(var(--color-bg-subtle))] transition-colors truncate"
+                                                >
+                                                    {cat.name}
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="h-px bg-[rgb(var(--color-border))] my-1" />
+
+                                    <NavLink to="/products" className={({ isActive }) => mobileNavClass(isActive)}>
+                                        All Products
+                                    </NavLink>
+                                    <NavLink to="/prescription" className={({ isActive }) => mobileNavClass(isActive)}>
+                                        Prescription Upload
+                                    </NavLink>
+                                    <NavLink to="/cart" className={({ isActive }) => mobileNavClass(isActive)}>
                                         <span className="flex items-center justify-between w-full">
-                                            <span>Dashboard ({user?.name})</span>
-                                            <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                                                {role === 'agent' ? 'Agent' : 'Customer'}
-                                            </span>
+                                            Cart
+                                            {cartCount > 0 && (
+                                                <span className="rounded bg-[rgb(var(--color-primary))] px-2 py-0.5 text-[10px] font-bold text-white">{cartCount}</span>
+                                            )}
                                         </span>
                                     </NavLink>
-                                ) : (
-                                    <NavLink to="/login" className={({ isActive }) => mobileNavClass(isActive)}>
-                                        Login / Register Account
-                                    </NavLink>
-                                )}
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </div>
+                                </>
+                            )}
+
+                            <div className="h-px bg-[rgb(var(--color-border))] my-1" />
+
+                            {isAuthenticated ? (
+                                <NavLink to="/dashboard" className={({ isActive }) => mobileNavClass(isActive)}>
+                                    <span className="flex items-center justify-between w-full">
+                                        <span>Dashboard ({user?.name})</span>
+                                        <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-[rgb(var(--color-primary))]/10 text-[rgb(var(--color-primary))]">
+                                            {role === 'agent' ? 'Agent' : 'Customer'}
+                                        </span>
+                                    </span>
+                                </NavLink>
+                            ) : (
+                                <NavLink to="/login" className={({ isActive }) => mobileNavClass(isActive)}>
+                                    Login / Register
+                                </NavLink>
+                            )}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </header>
     );
 }
 
-const navCapsuleClass = (isActive) =>
+const navLinkClass = (isActive) =>
     [
-        'px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200',
-        isActive ? 'bg-primary text-white shadow-sm' : 'text-text-muted hover:text-text hover:bg-surface/80',
+        'text-sm font-medium transition-colors duration-150',
+        isActive
+            ? 'text-[rgb(var(--color-primary))]'
+            : 'text-[rgb(var(--color-text-muted))] hover:text-[rgb(var(--color-text))]',
     ].join(' ');
 
 const mobileNavClass = (isActive) =>
     [
-        'flex items-center p-3 rounded-2xl text-xs font-bold transition-colors',
-        isActive ? 'bg-primary/10 text-primary' : 'text-text hover:bg-bg-subtle',
+        'flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+        isActive
+            ? 'text-[rgb(var(--color-primary))] bg-[rgb(var(--color-primary))]/8'
+            : 'text-[rgb(var(--color-text))] hover:bg-[rgb(var(--color-bg-subtle))]',
     ].join(' ');

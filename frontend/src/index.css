@@ -105,15 +105,16 @@
   }
 
   .page-shell {
-    @apply min-h-screen pt-20 pb-16;
+    @apply min-h-screen pt-6 pb-16;
   }
 
   .section-pad {
     @apply py-16 md:py-24;
   }
   
-  .kicker {
-    @apply inline-flex items-center gap-2 text-xs font-extrabold tracking-widest uppercase text-[rgb(var(--color-primary))] bg-primary/10 px-3 py-1 rounded-full border border-primary/20 mb-3;
+  .kicker,
+  .section-label {
+    @apply inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold tracking-widest uppercase text-[rgb(var(--color-text))] bg-[rgb(var(--color-bg-subtle))] border border-[rgb(var(--color-border))] mb-3 shadow-sm transition-colors;
   }
 
   .display-heading {

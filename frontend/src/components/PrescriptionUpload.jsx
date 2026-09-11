@@ -268,10 +268,7 @@ export default function PrescriptionUpload() {
             {/* Header */}
             <div className="mb-8">
                 <div className="flex items-center justify-between">
-                    <span className="kicker">
-                        <Icon name="ClipboardList" className="h-3.5 w-3.5" />
-                        Prescription Portal
-                    </span>
+                    <span className="kicker">Prescription Portal</span>
                     <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
                         Account: {user.email}
                     </span>

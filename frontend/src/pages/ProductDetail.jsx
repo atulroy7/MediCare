@@ -122,9 +122,7 @@ export default function ProductDetail() {
                         <div className="space-y-8">
                             {/* Header */}
                             <div>
-                                <span className="kicker !mb-3">
-                                    {product.category}
-                                </span>
+                                <span className="kicker">{product.category}</span>
                                 <h1 className="display-heading text-4xl sm:text-5xl !mb-2 text-balance">
                                     {product.name}
                                 </h1>

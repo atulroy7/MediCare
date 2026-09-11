@@ -286,9 +286,7 @@ export default function Home() {
                             transition={{ duration: 0.6, ease: 'easeOut' }}
                             className="lg:col-span-7 space-y-8"
                         >
-                            <span className="kicker">
-                                <Icon name="Activity" className="h-4 w-4" /> Certified Pharmacy Care
-                            </span>
+                            <span className="kicker">Certified Pharmacy Care</span>
 
                             <div className="space-y-4">
                                 <h1 className="display-heading text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-text leading-[1.05]">

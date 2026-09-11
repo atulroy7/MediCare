@@ -115,7 +115,7 @@ export default function Prescription() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6, ease: 'easeOut' }}
                     >
-                        <span className="kicker justify-center">Secure Upload</span>
+                        <span className="kicker">Secure Upload</span>
                         <h1 className="display-heading !mb-4">
                             Send us your <span className="text-primary font-bold">prescription</span>
                         </h1>
@@ -350,7 +350,7 @@ export default function Prescription() {
                         transition={{ duration: 0.5, ease: 'easeOut' }}
                         className="mb-16 text-center"
                     >
-                        <span className="kicker justify-center">How It Works</span>
+                        <span className="kicker">How It Works</span>
                         <h2 className="display-heading !mb-4">Three simple steps</h2>
                         <p className="mx-auto max-w-xl text-lg text-text-muted">
                             Our streamlined process ensures your prescriptions are handled with clinical precision from upload to delivery.

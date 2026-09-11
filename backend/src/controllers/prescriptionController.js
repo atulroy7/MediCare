@@ -24,7 +24,7 @@ const IN_MEMORY_QUEUE = [
         patientName: 'Priya Verma', 
         doctor: 'Dr. K. N. Rao (Cardiologist)', 
         createdAt: new Date('2026-08-05'), 
-        status: 'APPROVED', 
+        status: 'FULFILLED', 
         filename: 'prescription_priya.jpg', 
         userEmail: 'priya@demo.com',
         phone: '9123456789',
@@ -60,6 +60,16 @@ export const createPrescription = asyncHandler(async (req, res) => {
     const rxId = incomingRxId || incomingId || ('RX-' + Math.floor(1000 + Math.random() * 9000));
     let rxDoc = null;
 
+    const RX_KEYWORDS = [
+        'amoxicillin', 'augmentin', 'pantocid', 'pantoprazole', 'metformin',
+        'cetzine', 'cetirizine', 'voveran', 'diclofenac', 'amlopin', 'amlodipine',
+        'thyronorm', 'levothyroxine', 'betnesol', 'betamethasone', 'azithral',
+        'azithromycin', 'tramadol', 'antibiotic', 'steroid', 'schedule h'
+    ];
+    const combinedText = [medicinesSummary || '', notes || ''].join(' ').toLowerCase();
+    const detectedRx = RX_KEYWORDS.filter(kw => combinedText.includes(kw));
+    const requiresVerification = detectedRx.length > 0 || Boolean(req.body.requiresVerification);
+
     if (process.env.MONGO_URI) {
         try {
             const validUserId = userId && mongoose.Types.ObjectId.isValid(userId) ? userId : undefined;
@@ -75,6 +85,8 @@ export const createPrescription = asyncHandler(async (req, res) => {
                 photoUrl: photoUrl || '',
                 doctor: notes ? `Note: ${notes.substring(0, 30)}...` : 'Dr. Verified Practitioner',
                 medicinesSummary: medicinesSummary || 'General Prescription Upload',
+                requiresVerification,
+                rxMedicines: detectedRx,
                 status: 'PENDING_VERIFICATION'
             });
         } catch (err) {
@@ -95,6 +107,8 @@ export const createPrescription = asyncHandler(async (req, res) => {
             photoUrl: photoUrl || '',
             doctor: notes ? `Note: ${notes.substring(0, 30)}...` : 'Dr. Verified Practitioner',
             medicinesSummary: medicinesSummary || 'General Prescription Upload',
+            requiresVerification,
+            rxMedicines: detectedRx,
             status: 'PENDING_VERIFICATION',
             createdAt: new Date()
         };

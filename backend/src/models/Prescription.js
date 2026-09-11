@@ -17,7 +17,9 @@ const prescriptionSchema = new mongoose.Schema({
     },
     doctor: { type: String, default: 'Dr. Verified Practitioner' },
     medicinesSummary: { type: String, default: 'General Prescription Upload' },
-    agentNotes: { type: String, default: '' }
+    agentNotes: { type: String, default: '' },
+    requiresVerification: { type: Boolean, default: false },
+    rxMedicines: [{ type: String }]
 }, { timestamps: true });
 
 export default mongoose.model('Prescription', prescriptionSchema);

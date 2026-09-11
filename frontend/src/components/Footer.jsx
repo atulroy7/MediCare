@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { footerLinks, ownerProfile, socialLinks, storeInfo } from '../data/products';
 import Icon from './Icons';
+import Logo from './Logo';
 
 import { useAuth } from '../context/AuthContext';
 
@@ -21,17 +22,17 @@ export default function Footer() {
 
     return (
         <footer className="border-t border-border bg-surface text-text relative overflow-hidden">
-            {/* Subtle background glow */}
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3/4 h-64 bg-primary/3 blur-[100px] pointer-events-none" />
-
             <div className="mx-auto grid max-w-7xl gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[1.4fr_0.6fr_0.6fr_1fr] lg:gap-16 lg:px-8 relative z-10">
                 {/* Brand column */}
                 <div className="space-y-6">
                     <div>
-                        <p className="font-serif text-3xl font-bold tracking-tight">
-                            MediCare
-                        </p>
-                        <p className="mt-4 max-w-md text-base leading-relaxed text-text-muted">
+                        <div className="flex items-center gap-2.5 mb-2">
+                            <Logo className="h-8 w-8" />
+                            <p className="font-serif text-3xl font-bold tracking-tight">
+                                MediCare
+                            </p>
+                        </div>
+                        <p className="mt-3 max-w-md text-base leading-relaxed text-text-muted">
                             A neighborhood pharmacy experience shaped for clarity, care, and dependable service.
                         </p>
                     </div>

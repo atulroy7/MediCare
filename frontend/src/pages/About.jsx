@@ -112,7 +112,7 @@ export default function About() {
                                 <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 blur-[80px]" />
                                 
                                 <div className="mb-12 text-center relative z-10">
-                                    <span className="kicker justify-center">Timeline</span>
+                                    <span className="kicker">Timeline</span>
                                     <h2 className="display-heading text-3xl sm:text-4xl">
                                         Our journey so far
                                     </h2>

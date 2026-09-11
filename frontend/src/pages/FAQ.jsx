@@ -21,7 +21,7 @@ export default function FAQ() {
                         animate={{ opacity: 1, y: 0 }}
                         className="text-center mb-16"
                     >
-                        <span className="kicker justify-center">FAQ</span>
+                        <span className="kicker">FAQ</span>
                         <h1 className="display-heading text-4xl sm:text-5xl !mb-4">Common questions</h1>
                         <p className="text-lg text-text-muted">
                             Find quick answers to questions about delivery, prescriptions, returns, and payment methods.

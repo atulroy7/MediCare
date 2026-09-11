@@ -6,6 +6,9 @@ import { asyncHandler, Errors } from '../utils/errors.js';
 import crypto from 'crypto';
 import axios from 'axios';
 
+// In-memory approved prescriptions cache (mirrors prescriptionController IN_MEMORY_QUEUE)
+// Imported lazily to avoid circular deps — we query Prescription model directly.
+
 /**
  * Helper to send telegram notification
  */
@@ -31,23 +34,74 @@ const sendTelegramNotification = async (message) => {
  * POST /api/orders/create
  */
 export const createOrder = asyncHandler(async (req, res) => {
-    const { items, user_name, user_phone, shipping_address, prescription_url } = req.body;
+    const { items, user_name, user_phone, shipping_address, prescription_url, user_email: bodyEmail } = req.body;
     const user_id = req.user.uid;
-    const user_email = (req.user.email || '').toLowerCase().trim();
-
-    // Verify Medical Agent prescription approval
-    if (process.env.MONGO_URI && user_email) {
-        const approvedRx = await Prescription.findOne({
-            userEmail: user_email,
-            status: 'APPROVED'
-        });
-        if (!approvedRx) {
-            throw Errors.forbidden('Order blocked: A Medical Agent-approved prescription is required to place an order.');
-        }
-    }
+    // Email may come from Firebase token OR from request body (for local-auth users)
+    const user_email = (req.user.email || bodyEmail || '').toLowerCase().trim();
 
     if (!items || items.length === 0) {
         throw Errors.badRequest('Order items cannot be empty');
+    }
+
+    // Known Schedule H / H1 / Rx medicine keywords
+    const RX_KEYWORDS = [
+        'amoxicillin', 'augmentin', 'pantocid', 'pantoprazole', 'metformin',
+        'cetzine', 'cetirizine', 'voveran', 'diclofenac', 'amlopin', 'amlodipine',
+        'thyronorm', 'levothyroxine', 'betnesol', 'betamethasone', 'azithral',
+        'azithromycin', 'tramadol', 'antibiotic', 'steroid', 'schedule h'
+    ];
+
+    const isItemRx = (item) => {
+        if (!item) return false;
+        if (item.requiresPrescription === true) return true;
+        const name = (item.name || '').toLowerCase();
+        return RX_KEYWORDS.some(kw => name.includes(kw));
+    };
+
+    // Determine if ANY item in this order requires a doctor's prescription
+    const orderRequiresRx = Boolean(
+        req.body.requiresPrescription ||
+        (Array.isArray(items) && items.some(isItemRx))
+    );
+
+    let hasApprovedRx = false;
+    let approvedDoc = null;
+
+    // ── STRICT ENFORCEMENT: If order contains prescription medicines, Medical Agent approval is mandatory ──
+    if (orderRequiresRx) {
+        if (!user_email) {
+            throw Errors.forbidden('Order blocked: Unable to identify user email. Please log in again.');
+        }
+
+        // 1. Check MongoDB (source of truth)
+        if (process.env.MONGO_URI) {
+            try {
+                const latestRx = await Prescription.findOne({
+                    userEmail: user_email
+                }).sort({ createdAt: -1 });
+
+                if (latestRx && latestRx.status === 'APPROVED') {
+                    hasApprovedRx = true;
+                    approvedDoc = latestRx;
+                }
+            } catch (dbErr) {
+                console.error('[createOrder] MongoDB prescription lookup failed:', dbErr.message);
+                throw Errors.internal('Unable to verify prescription approval. Please try again.');
+            }
+        } else {
+            // No MongoDB: use in-memory queue from prescriptionController
+            const { IN_MEMORY_QUEUE } = await import('./prescriptionController.js').catch(() => ({ IN_MEMORY_QUEUE: [] }));
+            const userQueue = IN_MEMORY_QUEUE.filter(p => p.userEmail?.toLowerCase() === user_email);
+            const latestRx = userQueue[0];
+            if (latestRx && latestRx.status === 'APPROVED') {
+                hasApprovedRx = true;
+                approvedDoc = latestRx;
+            }
+        }
+
+        if (!hasApprovedRx) {
+            throw Errors.forbidden('Order blocked: This order contains prescription-only medicine(s) (Schedule H/H1) which strictly require an approved doctor prescription from our Medical Agent. Please upload your prescription and wait for approval.');
+        }
     }
 
     let totalAmount = 0;
@@ -110,6 +164,21 @@ export const createOrder = asyncHandler(async (req, res) => {
         await Product.findByIdAndUpdate(item.product, {
             $inc: { stock: -item.quantity }
         });
+    }
+
+    // Fulfill the approved prescription so it cannot be used again (only for Rx orders)
+    if (orderRequiresRx && approvedDoc) {
+        try {
+            if (process.env.MONGO_URI && approvedDoc._id) {
+                await Prescription.findByIdAndUpdate(approvedDoc._id, {
+                    $set: { status: 'FULFILLED' }
+                });
+            } else {
+                approvedDoc.status = 'FULFILLED';
+            }
+        } catch (fulfillErr) {
+            console.warn('[createOrder] Failed to mark prescription as fulfilled:', fulfillErr.message);
+        }
     }
 
     res.status(201).json({

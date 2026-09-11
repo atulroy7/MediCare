@@ -111,9 +111,7 @@ export default function Products() {
                         className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between"
                     >
                         <div className="max-w-2xl">
-                            <span className="kicker flex items-center gap-2">
-                                <Icon name="Pill" className="h-4 w-4" /> {category === 'All' ? 'Store Catalog' : category}
-                            </span>
+                            <span className="kicker">{category === 'All' ? 'Store Catalog' : category}</span>
                             <h1 className="display-heading !mb-2">
                                 {category === 'All' ? (
                                     <>Browse our <span className="text-primary font-bold">curated</span> collection</>
